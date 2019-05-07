@@ -18,15 +18,15 @@ void ADCselectChannel(uint8_t channel)
 	if(channel <= 7)
 	{
 		ADMUX |= channel; // Set first 3 bits of mux
-		ADMUX &=~ (1 << MUX3); //Clear Mux 4 and mux 3
-		ADMUX &=~ (1 << MUX4);
-		ADCSRB &=~(1 << MUX5); //Clear Mux 5
+		ADMUX &= ~(1 << MUX3); //Clear Mux 4 and mux 3
+		ADMUX &= ~(1 << MUX4);
+		ADCSRB &= ~(1 << MUX5); //Clear Mux 5
 	}
 	else if (channel <= 14)
 	{
 		ADCSRB |=(1<<MUX5); //Set mux 5 bit
-		ADMUX &=~ (1 << MUX3); //Clear Mux 4 and mux 3
-		ADMUX &=~ (1 << MUX4);// normally it's not needed
+		ADMUX &= ~(1 << MUX3); //Clear Mux 4 and mux 3
+		ADMUX &= ~(1 << MUX4);// normally it's not needed
 		ADMUX |= (channel - 8); //Set MUX0,MUX1,MUX2
 	}
 }

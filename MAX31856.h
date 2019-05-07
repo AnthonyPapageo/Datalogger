@@ -94,14 +94,12 @@ class MAX31856 {
   void setNoiseFilter(max31856_noise_filter_t noiseFilter);
 
  private:
+  MAX31856();
   int8_t _muxChannel;
-
   void readRegisterN(uint8_t addr, uint8_t buffer[], uint8_t n);
-
   uint8_t  readRegister8(uint8_t addr);
   uint16_t readRegister16(uint8_t addr);
   uint32_t readRegister24(uint8_t addr);
-
   void     writeRegister8(uint8_t addr, uint8_t reg);
 };
 

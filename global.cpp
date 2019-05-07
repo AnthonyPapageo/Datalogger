@@ -8,7 +8,16 @@
 LiquidScreen* previous_screen = &main_Screen;
 LiquidScreen* current_screen = &main_Screen;
 
+/////////MAX///////////
+MAX31856 max_array[20] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}; //Call the 20 constructor
 
+////////MEASURE///////////
+float TC_Measure_Array[20];
+float NTC_Measure_Array[5];
+float V24_Measure_Array[2];
+float V5_Measure_Array[2];
+int32_t I_Measure_Array[4];//contain bus voltage and current TODO CAST getbusmillivolts in INT32
+uint32_t IntervalMeasure = 5;
 
 /////////EEPROM DATA///////////
 uint8_t EEMEM NV_NTC_nb = 0;
@@ -16,13 +25,10 @@ uint8_t EEMEM NV_TC_nb = 0;
 uint8_t EEMEM NV_I_nb = 0;
 uint8_t EEMEM NV_V24_nb = 0;
 uint8_t EEMEM NV_V5_nb = 1;
-
 float EEMEM NV_B_FACTOR = 3977.0;
 float EEMEM NV_R_25 = 10000.0;
-
 uint8_t EEMEM NV_IntervalSeconds = 5;
 uint8_t EEMEM NV_IntervalMinutes = 0;
-
 uint16_t EEMEM NV_R_SHUNT = 2000;
 
 /////////NUMBER OF DEVICES ///////////
@@ -95,11 +101,16 @@ const uint8_t CS_SD = 43; //Arduino pin of PL6
 //////////////NTC//////////////
 float B_FACTOR = 3977.0;
 float R_25 = 10000.0;
-float R_LINE = 10000.0;
+const float R_LINE_NTC = 10000.0;
+const float V_SUPPLY = 5.0;
+
+//////////////0-24V READINGS//////////////
+float const R_UP = 39000.0;
+float const R_DOWN = 10000.0;
 
 //////////////CURRENT SENSING//////////////
 uint16_t R_SHUNT = 2000;
-
+const uint16_t DEFAULT_R_SHUNT = 2000;
 
 
 /////////GLYPH///////////
@@ -154,7 +165,7 @@ namespace GLYPH
 	const uint8_t leftArrowIndex = 4;
 }
 
-namespace ADCChannel
+/*namespace ADCChannel
 {
 	 const uint8_t V1 = 13;
 	 const uint8_t V2 = 14;
@@ -165,6 +176,10 @@ namespace ADCChannel
 	 const uint8_t NTC3 = 10;
 	 const uint8_t NTC4 = 11;
 	 const uint8_t NTC5 = 12;
-}
+}*/
+const uint8_t NTCChannel[5] = {8,9,10,11,12}; //NTC are on ADC8 to ADC12
+const uint8_t V24Channel[MAX_V24_NB] = {13,14};
+const uint8_t V5Channel[MAX_V5_NB] = {3,2};
+
 
 

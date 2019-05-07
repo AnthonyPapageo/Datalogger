@@ -20,7 +20,7 @@
 
 
 //WARNING CPHA = 1 is MANDATORY
-static SPISettings max31856_spisettings = SPISettings(100000, MSBFIRST, SPI_MODE1);
+static SPISettings max31856_spisettings = SPISettings(400000, MSBFIRST, SPI_MODE1);
 
 
 
@@ -196,6 +196,8 @@ float MAX31856::readThermocoupleTemperature(void) {
 }
 
 /**********************************************/
+
+MAX31856::MAX31856(){}; //private constructor because we don't want implicit constructor call
 
 uint8_t MAX31856::readRegister8(uint8_t addr) {
 	uint8_t ret = 0;

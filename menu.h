@@ -41,12 +41,12 @@ extern LiquidScreen Settings_Screen;
 
 
 //Number
-extern LiquidLine SettingsNumber_line0;
-extern LiquidLine SettingsNumber_line1;
-extern LiquidLine SettingsNumber_line2;
-extern LiquidLine SettingsNumber_line3;
-extern LiquidLine SettingsNumber_line4;
-extern LiquidLine SettingsNumber_line5;
+extern LiquidLine SettingsNumbeR_LINE_NTC0;
+extern LiquidLine SettingsNumbeR_LINE_NTC1;
+extern LiquidLine SettingsNumbeR_LINE_NTC2;
+extern LiquidLine SettingsNumbeR_LINE_NTC3;
+extern LiquidLine SettingsNumbeR_LINE_NTC4;
+extern LiquidLine SettingsNumbeR_LINE_NTC5;
 extern LiquidScreen SettingsNumber_Screen;
 
 
@@ -123,6 +123,13 @@ extern LiquidLine Launch_line4;
 extern LiquidLine Launch_line5;
 extern LiquidScreen Launch_Screen;
 
+//////////////MEASURING///////////////
+extern LiquidLine Measuring_line0;
+extern LiquidLine Measuring_line1;
+extern LiquidLine Measuring_line2;
+extern LiquidLine Measuring_line3;
+extern LiquidScreen Measuring_Screen;
+
 
 
 //////////////Menu//////////////
@@ -142,6 +149,7 @@ void gotoSaveToEEPROMScreen(void);
 void gotoSavedToEEPROMScreen(void);
 void gotoINAScreen(void);
 void gotoLaunchScreen(void);
+void gotoMeasuringScreen(void);
 /////Utility functions
 void AddVariableToLine(void);
 void putInProgmem(void);

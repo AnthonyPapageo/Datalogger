@@ -7,15 +7,30 @@
 #include <LiquidCrystal.h>
 #include <LiquidMenu.h>
 #include <INA.h>
+#include <RTClib.h>
+#include "MAX31856.h"
+
+#define MAX_TC_NB 20
+#define MAX_NTC_NB 5
+#define MAX_V24_NB 2
+#define MAX_V5_NB 2
+#define MAX_I_NB 4
 
 
 //OBJECT
-
-extern LiquidCrystal lcd;
 extern INA_Class INA;
-
+extern RTC_DS3231 RTC;
 extern LiquidScreen* current_screen;//Used so we have to call get_currentScreen only once
 extern LiquidScreen* previous_screen;
+extern MAX31856 max_array[20];
+
+////////MEASURE///////////
+extern float TC_Measure_Array[MAX_TC_NB];
+extern float NTC_Measure_Array[MAX_NTC_NB];
+extern float V24_Measure_Array[MAX_V24_NB];
+extern float V5_Measure_Array[MAX_V5_NB];
+extern int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current
+extern uint32_t IntervalMeasure;
 
 
 /////////EEPROM DATA///////////
@@ -24,13 +39,10 @@ extern uint8_t EEMEM NV_TC_nb;
 extern uint8_t EEMEM NV_I_nb;
 extern uint8_t EEMEM NV_V24_nb;
 extern uint8_t EEMEM NV_V5_nb;
-
 extern float EEMEM  NV_B_FACTOR;
 extern float EEMEM NV_R_25;
-
 extern uint8_t EEMEM NV_IntervalSeconds;
 extern uint8_t EEMEM NV_IntervalMinutes;
-
 extern uint16_t EEMEM NV_R_SHUNT;
 
 /////////NUMBER OF DEVICES ///////////
@@ -91,10 +103,18 @@ extern const uint8_t CS_DISABLE;
 //////////////NTC//////////////
 extern float B_FACTOR;
 extern float R_25;
-extern float R_LINE;
+extern const float R_LINE_NTC;
+extern const float V_SUPPLY;
+
+//////////////0-24V READINGS//////////////
+extern const float R_UP;
+extern const float R_DOWN;
+
+
 
 //////////////CURRENT SENSING//////////////
 extern uint16_t R_SHUNT;
+extern const uint16_t DEFAULT_R_SHUNT;
 
 
 /////////GLYPH///////////
@@ -110,7 +130,7 @@ namespace GLYPH
 	extern const uint8_t leftArrowIndex;
 }
 
-namespace ADCChannel
+/*namespace ADCChannel
 {
 	extern const uint8_t V1;
 	extern const uint8_t V2;
@@ -121,7 +141,10 @@ namespace ADCChannel
 	extern const uint8_t NTC3;
 	extern const uint8_t NTC4;
 	extern const uint8_t NTC5;
-}
+}*/
+extern const uint8_t NTCChannel[MAX_NTC_NB];
+extern const uint8_t V24Channel[MAX_V24_NB];
+extern const uint8_t V5Channel[MAX_V5_NB];
 
  
 #endif

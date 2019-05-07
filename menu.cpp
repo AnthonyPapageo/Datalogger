@@ -9,6 +9,7 @@
 #include "global.h"
 #include "utility.h"
 #include "menu.h"
+#include "measure.h"
 
 
 /////////////STRINGS//////////////////////
@@ -26,10 +27,10 @@ LiquidScreen welcome_Screen(welcome_line0, welcome_line1, welcome_line2, welcome
 /////////////Main Screen////////////////////
 const char main_text0[] PROGMEM = "    MAIN MENU";
 const char main_text1[] PROGMEM = "1: SETTINGS";
-const char main_text2[] PROGMEM = "2: NTC READINGS";
-const char main_text3[] PROGMEM = "3: VOLTAGE READINGS";
-const char main_text4[] PROGMEM = "4: CURRENT READINGS";
-const char main_text5[] PROGMEM = "5: LAUNCH A TEST";
+const char main_text2[] PROGMEM = "2: LIVE MEASURE";
+const char main_text3[] PROGMEM = "3: LAUNCH A TEST";
+const char main_text4[] PROGMEM = "4: ";
+const char main_text5[] PROGMEM = "5: ";
 LiquidLine main_line0(1,0,main_text0);
 LiquidLine main_line1(1,1,main_text1);
 LiquidLine main_line2(1,2,main_text2);
@@ -63,13 +64,13 @@ const char SettingsNumber_text2[] PROGMEM = "I :        ";
 const char SettingsNumber_text3[] PROGMEM = "V (24V) :  ";
 const char SettingsNumber_text4[] PROGMEM = "V (5V) :   ";
 const char SettingsNumber_text5[] PROGMEM = "BACK";
-LiquidLine SettingsNumber_line0(1,0,SettingsNumber_text0, GLYPH::leftArrowIndex, NTC_nb, GLYPH::rightArrowIndex);
-LiquidLine SettingsNumber_line1(1,1,SettingsNumber_text1, GLYPH::leftArrowIndex, TC_nb, GLYPH::rightArrowIndex);
-LiquidLine SettingsNumber_line2(1,2,SettingsNumber_text2, GLYPH::leftArrowIndex, I_nb, GLYPH::rightArrowIndex);
-LiquidLine SettingsNumber_line3(1,3,SettingsNumber_text3, GLYPH::leftArrowIndex, V24_nb, GLYPH::rightArrowIndex);
-LiquidLine SettingsNumber_line4(1,4,SettingsNumber_text4, GLYPH::leftArrowIndex, V5_nb, GLYPH::rightArrowIndex);
-LiquidLine SettingsNumber_line5(1,5,SettingsNumber_text5);
-LiquidScreen SettingsNumber_Screen(SettingsNumber_line0,SettingsNumber_line1,SettingsNumber_line2,SettingsNumber_line3,SettingsNumber_line4,SettingsNumber_line5);
+LiquidLine SettingsNumbeR_LINE_NTC0(1,0,SettingsNumber_text0, GLYPH::leftArrowIndex, NTC_nb, GLYPH::rightArrowIndex);
+LiquidLine SettingsNumbeR_LINE_NTC1(1,1,SettingsNumber_text1, GLYPH::leftArrowIndex, TC_nb, GLYPH::rightArrowIndex);
+LiquidLine SettingsNumbeR_LINE_NTC2(1,2,SettingsNumber_text2, GLYPH::leftArrowIndex, I_nb, GLYPH::rightArrowIndex);
+LiquidLine SettingsNumbeR_LINE_NTC3(1,3,SettingsNumber_text3, GLYPH::leftArrowIndex, V24_nb, GLYPH::rightArrowIndex);
+LiquidLine SettingsNumbeR_LINE_NTC4(1,4,SettingsNumber_text4, GLYPH::leftArrowIndex, V5_nb, GLYPH::rightArrowIndex);
+LiquidLine SettingsNumbeR_LINE_NTC5(1,5,SettingsNumber_text5);
+LiquidScreen SettingsNumber_Screen(SettingsNumbeR_LINE_NTC0,SettingsNumbeR_LINE_NTC1,SettingsNumbeR_LINE_NTC2,SettingsNumbeR_LINE_NTC3,SettingsNumbeR_LINE_NTC4,SettingsNumbeR_LINE_NTC5);
 
 //interval
 const char SettingsInterval_text0[] PROGMEM = "Interval of capture ?";
@@ -179,6 +180,17 @@ LiquidLine Launch_line5(1,5, Launch_text5);
 LiquidScreen Launch_Screen(Launch_line0,Launch_line1,Launch_line2,Launch_line3,Launch_line4, Launch_line5);
 
 
+//////////////MEASURING///////////////
+const char Measuring_text0[] PROGMEM = "Time elapsed";
+const char Measuring_text2[] PROGMEM = "";
+const char Measuring_text3[] PROGMEM = "STOP test";
+LiquidLine Measuring_line0(1,0, Measuring_text0);
+LiquidLine Measuring_line1(1,1, Measuring_text2);
+LiquidLine Measuring_line2(1,2, Measuring_text2);
+LiquidLine Measuring_line3(1,3, Measuring_text3);
+LiquidScreen Measuring_Screen(Measuring_line0,Measuring_line1,Measuring_line2,Measuring_line3);
+
+
 void AddVariableToLine(void)
 {
 	Launch_line1.add_variable(" I=");
@@ -188,16 +200,16 @@ void AddVariableToLine(void)
 
 void setGlyph(void)
 {
-	SettingsNumber_line0.set_asGlyph(2); //left and right arrow
-	SettingsNumber_line0.set_asGlyph(4);
-	SettingsNumber_line1.set_asGlyph(2);
-	SettingsNumber_line1.set_asGlyph(4);
-	SettingsNumber_line2.set_asGlyph(2);
-	SettingsNumber_line2.set_asGlyph(4);
-	SettingsNumber_line3.set_asGlyph(2);
-	SettingsNumber_line3.set_asGlyph(4);
-	SettingsNumber_line4.set_asGlyph(2);
-	SettingsNumber_line4.set_asGlyph(4);
+	SettingsNumbeR_LINE_NTC0.set_asGlyph(2); //left and right arrow
+	SettingsNumbeR_LINE_NTC0.set_asGlyph(4);
+	SettingsNumbeR_LINE_NTC1.set_asGlyph(2);
+	SettingsNumbeR_LINE_NTC1.set_asGlyph(4);
+	SettingsNumbeR_LINE_NTC2.set_asGlyph(2);
+	SettingsNumbeR_LINE_NTC2.set_asGlyph(4);
+	SettingsNumbeR_LINE_NTC3.set_asGlyph(2);
+	SettingsNumbeR_LINE_NTC3.set_asGlyph(4);
+	SettingsNumbeR_LINE_NTC4.set_asGlyph(2);
+	SettingsNumbeR_LINE_NTC4.set_asGlyph(4);
 	
 	SettingsInterval_line1.set_asGlyph(2); //left and right arrow
 	SettingsInterval_line1.set_asGlyph(4);
@@ -243,12 +255,12 @@ void putInProgmem(void)
 	Settings_line4.set_asProgmem(1);
 	Settings_line5.set_asProgmem(1);
 	
-	SettingsNumber_line0.set_asProgmem(1);
-	SettingsNumber_line1.set_asProgmem(1);
-	SettingsNumber_line2.set_asProgmem(1);
-	SettingsNumber_line3.set_asProgmem(1);
-	SettingsNumber_line4.set_asProgmem(1);
-	SettingsNumber_line5.set_asProgmem(1);
+	SettingsNumbeR_LINE_NTC0.set_asProgmem(1);
+	SettingsNumbeR_LINE_NTC1.set_asProgmem(1);
+	SettingsNumbeR_LINE_NTC2.set_asProgmem(1);
+	SettingsNumbeR_LINE_NTC3.set_asProgmem(1);
+	SettingsNumbeR_LINE_NTC4.set_asProgmem(1);
+	SettingsNumbeR_LINE_NTC5.set_asProgmem(1);
 	
 	SettingsInterval_line0.set_asProgmem(1);
 	SettingsInterval_line1.set_asProgmem(1);
@@ -274,6 +286,9 @@ void putInProgmem(void)
 	Launch_line0.set_asProgmem(1);
 	Launch_line4.set_asProgmem(1);
 	Launch_line5.set_asProgmem(1);
+	
+	Measuring_line0.set_asProgmem(1);
+	Measuring_line3.set_asProgmem(1);
 }
 
 void enableScrolling(void)
@@ -291,6 +306,7 @@ void enableScrolling(void)
 	SavedToEEPROM_Screen.set_displayLineCount(LCD_ROWS);
 	INA_Screen.set_displayLineCount(LCD_ROWS);
 	Launch_Screen.set_displayLineCount(LCD_ROWS);
+	Measuring_Screen.set_displayLineCount(LCD_ROWS);
 }
 
 void attachFunctionToLine(void)
@@ -302,7 +318,7 @@ void attachFunctionToLine(void)
 	
 	main_line1.attach_function(1, gotoSettingsScreen); //Start the settings screen
 	main_line2.attach_function(1, emptyfunction);
-	main_line3.attach_function(1, emptyfunction);
+	main_line3.attach_function(1, gotoLaunchScreen);
 	main_line4.attach_function(1, gotoINAScreen);
 	main_line5.attach_function(1, gotoLaunchScreen);
 	
@@ -313,17 +329,17 @@ void attachFunctionToLine(void)
 	Settings_line4.attach_function(1, gotoRshuntSelectionScreen);
 	Settings_line5.attach_function(1, gotoSaveToEEPROMScreen);
 	
-	SettingsNumber_line0.attach_function(6, decrementNTC_nb); //left we decrement, right we increment
-	SettingsNumber_line0.attach_function(7, incrementNTC_nb);
-	SettingsNumber_line1.attach_function(6, decrementTC_nb);
-	SettingsNumber_line1.attach_function(7, incrementTC_nb);
-	SettingsNumber_line2.attach_function(6, decrementI_nb);
-	SettingsNumber_line2.attach_function(7, incrementI_nb);
-	SettingsNumber_line3.attach_function(6, decrementV24_nb);
-	SettingsNumber_line3.attach_function(7, incrementV24_nb);
-	SettingsNumber_line4.attach_function(6, decrementV5_nb);
-	SettingsNumber_line4.attach_function(7, incrementV5_nb);
-	SettingsNumber_line5.attach_function(1, gotoSettingsScreen);
+	SettingsNumbeR_LINE_NTC0.attach_function(6, decrementNTC_nb); //left we decrement, right we increment
+	SettingsNumbeR_LINE_NTC0.attach_function(7, incrementNTC_nb);
+	SettingsNumbeR_LINE_NTC1.attach_function(6, decrementTC_nb);
+	SettingsNumbeR_LINE_NTC1.attach_function(7, incrementTC_nb);
+	SettingsNumbeR_LINE_NTC2.attach_function(6, decrementI_nb);
+	SettingsNumbeR_LINE_NTC2.attach_function(7, incrementI_nb);
+	SettingsNumbeR_LINE_NTC3.attach_function(6, decrementV24_nb);
+	SettingsNumbeR_LINE_NTC3.attach_function(7, incrementV24_nb);
+	SettingsNumbeR_LINE_NTC4.attach_function(6, decrementV5_nb);
+	SettingsNumbeR_LINE_NTC4.attach_function(7, incrementV5_nb);
+	SettingsNumbeR_LINE_NTC5.attach_function(1, gotoSettingsScreen);
 	
 	Settings_NTC_line0.attach_function(1, gotoR25Screen );
 	Settings_NTC_line1.attach_function(1, gotoBValueSelectionScreen);
@@ -374,8 +390,12 @@ void attachFunctionToLine(void)
 	INA_line3.attach_function(1, gotoMainScreen);//return to main menu
 	
 	Launch_line0.attach_function(1, emptyfunction);
-	Launch_line4.attach_function(1, emptyfunction ); //TODO
+	Launch_line4.attach_function(1, gotoMeasuringScreen);
+	Launch_line4.attach_function(2, initMeasures); //TODO
+	Launch_line4.attach_function(3, firstLineSD);
 	Launch_line5.attach_function(1, gotoMainScreen);
+	
+	Measuring_line3.attach_function(1, emptyfunction );
 }
 
 void addScreens(void)
@@ -393,6 +413,7 @@ void addScreens(void)
 	menu.add_screen(SavedToEEPROM_Screen);
 	menu.add_screen(INA_Screen);
 	menu.add_screen(Launch_Screen);
+	menu.add_screen(Measuring_Screen);
 }
 
 
@@ -478,6 +499,13 @@ void gotoLaunchScreen(void)
 {
 	previous_screen = menu.get_currentScreen();
 	menu.change_screen(Launch_Screen);
+	menu.switch_focus(true);
+}
+
+void gotoMeasuringScreen(void)
+{
+	previous_screen = menu.get_currentScreen();
+	menu.change_screen(Measuring_Screen);
 	menu.switch_focus(true);
 }
 
