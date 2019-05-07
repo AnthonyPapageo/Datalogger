@@ -10,7 +10,7 @@
 
 
 void initSensor(void);
-void initMeasures(void);
+void launchMeasures(void);
 void getAllMeasures(void);
 void getTCMeasures(void);
 void getNTCMeasures(void);

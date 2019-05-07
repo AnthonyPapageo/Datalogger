@@ -31,6 +31,9 @@ extern float V24_Measure_Array[MAX_V24_NB];
 extern float V5_Measure_Array[MAX_V5_NB];
 extern int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current
 extern uint32_t IntervalMeasure;
+extern char TC_Type_Array[8];
+extern char TC_Type;
+extern uint8_t TC_Type_Counter;
 
 
 /////////EEPROM DATA///////////

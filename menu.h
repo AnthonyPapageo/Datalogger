@@ -37,6 +37,7 @@ extern LiquidLine Settings_line2;
 extern LiquidLine Settings_line3;
 extern LiquidLine Settings_line4;
 extern LiquidLine Settings_line5;
+extern LiquidLine Settings_line6;
 extern LiquidScreen Settings_Screen;
 
 
@@ -90,6 +91,11 @@ extern LiquidLine RshuntSelection_line3;
 extern LiquidLine RshuntSelection_line4;
 extern LiquidScreen RshuntSelection_Screen;
 
+//TC TYPE
+extern LiquidLine TcTypeSelection_line0;
+extern LiquidLine TcTypeSelection_line1;
+extern LiquidScreen TcTypeSelection_Screen;
+
 
 
 //Save to EEPROM
@@ -130,6 +136,13 @@ extern LiquidLine Measuring_line2;
 extern LiquidLine Measuring_line3;
 extern LiquidScreen Measuring_Screen;
 
+//End of measures
+extern LiquidLine EndOfMeasures_line0;
+extern LiquidLine EndOfMeasures_line1;
+extern LiquidLine EndOfMeasures_line2;
+extern LiquidLine EndOfMeasures_line3;
+extern LiquidScreen EndOfMeasures_Screen;
+
 
 
 //////////////Menu//////////////
@@ -145,11 +158,13 @@ void gotoNTCScreen(void);
 void gotoR25Screen(void);
 void gotoBValueSelectionScreen(void);
 void gotoRshuntSelectionScreen(void);
+void gotoTcTypeSelectionScreen(void);
 void gotoSaveToEEPROMScreen(void);
 void gotoSavedToEEPROMScreen(void);
 void gotoINAScreen(void);
 void gotoLaunchScreen(void);
 void gotoMeasuringScreen(void);
+void gotoEndOfMeasuresScreen(void);
 /////Utility functions
 void AddVariableToLine(void);
 void putInProgmem(void);
@@ -199,6 +214,11 @@ void increment1000Rshunt(void);
 void decrement100Rshunt(void);
 void increment100Rshunt(void);
 void resetRshuntToDefault(void);
+
+//TC_TYPE
+void incrementTcType(void);
+void decrementTcType(void);
+const char* getTCType(void);
 
 
 #endif /* MENU_H_ */

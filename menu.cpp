@@ -46,14 +46,16 @@ const char Settings_text1[] PROGMEM = "1: NUMBER OF DEVICE";
 const char Settings_text2[] PROGMEM = "2: TIME INTERVAL";
 const char Settings_text3[] PROGMEM = "3: NTC CONFIG";
 const char Settings_text4[] PROGMEM = "4: SHUNT VALUE";
-const char Settings_text5[] PROGMEM = "5: SAVE CONFIG"; //Maybe plusieurs configuration
+const char Settings_text5[] PROGMEM = "5: TC TYPE";
+const char Settings_text6[] PROGMEM = "6: SAVE CONFIG"; //Maybe plusieurs configuration
 LiquidLine Settings_line0(1,0,Settings_text0);
 LiquidLine Settings_line1(1,1,Settings_text1);
 LiquidLine Settings_line2(1,2,Settings_text2);
 LiquidLine Settings_line3(1,3,Settings_text3);
 LiquidLine Settings_line4(1,4,Settings_text4);
 LiquidLine Settings_line5(1,5,Settings_text5);
-LiquidScreen Settings_Screen(Settings_line0,Settings_line1,Settings_line2,Settings_line3,Settings_line4,Settings_line5);
+LiquidLine Settings_line6(1,6,Settings_text6);
+LiquidScreen Settings_Screen(Settings_line0,Settings_line1,Settings_line2,Settings_line3,Settings_line4,Settings_line5,Settings_line6);
 
 
 
@@ -133,6 +135,13 @@ LiquidLine RshuntSelection_line3(1,3,RshuntSelection_text3);
 LiquidLine RshuntSelection_line4(1,4,RshuntSelection_text4);
 LiquidScreen RshuntSelection_Screen(RshuntSelection_line0,RshuntSelection_line1,RshuntSelection_line2,RshuntSelection_line3,RshuntSelection_line4);
 
+//TC TYPE
+const char TcTypeSelection_text0[] PROGMEM = "TC TYPE =  ";
+const char TcTypeSelection_text1[] PROGMEM = "BACK";
+LiquidLine TcTypeSelection_line0(1,0, TcTypeSelection_text0, GLYPH::leftArrowIndex, getTCType, GLYPH::rightArrowIndex);
+LiquidLine TcTypeSelection_line1(1,1, TcTypeSelection_text1);
+LiquidScreen TcTypeSelection_Screen(TcTypeSelection_line0,TcTypeSelection_line1);
+
 
 //Save to EEPROM
 const char SaveToEEPROM_text0[] PROGMEM = "Save config";
@@ -191,6 +200,18 @@ LiquidLine Measuring_line3(1,3, Measuring_text3);
 LiquidScreen Measuring_Screen(Measuring_line0,Measuring_line1,Measuring_line2,Measuring_line3);
 
 
+//End of measures
+const char EndOfMeasures_text0[] PROGMEM = "Test finished !";
+const char EndOfMeasures_text1[] PROGMEM = "Number of measures :";
+const char EndOfMeasures_text2[] PROGMEM = "Time elapsed :";
+const char EndOfMeasures_text3[] PROGMEM = "OK ";
+LiquidLine EndOfMeasures_line0(1,0, EndOfMeasures_text0);
+LiquidLine EndOfMeasures_line1(1,1, EndOfMeasures_text1);
+LiquidLine EndOfMeasures_line2(1,2, EndOfMeasures_text2);
+LiquidLine EndOfMeasures_line3(1,3, EndOfMeasures_text3);
+LiquidScreen EndOfMeasures_Screen(EndOfMeasures_line0,EndOfMeasures_line1,EndOfMeasures_line2,EndOfMeasures_line3);
+
+
 void AddVariableToLine(void)
 {
 	Launch_line1.add_variable(" I=");
@@ -232,6 +253,9 @@ void setGlyph(void)
 	RshuntSelection_line1.set_asGlyph(3);
 	RshuntSelection_line2.set_asGlyph(1);
 	RshuntSelection_line2.set_asGlyph(3);
+	
+	TcTypeSelection_line0.set_asGlyph(2);
+	TcTypeSelection_line0.set_asGlyph(4);
 }
 
 void putInProgmem(void)
@@ -254,6 +278,7 @@ void putInProgmem(void)
 	Settings_line3.set_asProgmem(1);
 	Settings_line4.set_asProgmem(1);
 	Settings_line5.set_asProgmem(1);
+	Settings_line6.set_asProgmem(1);
 	
 	SettingsNumbeR_LINE_NTC0.set_asProgmem(1);
 	SettingsNumbeR_LINE_NTC1.set_asProgmem(1);
@@ -270,6 +295,9 @@ void putInProgmem(void)
 	Settings_NTC_line0.set_asProgmem(1);
 	Settings_NTC_line1.set_asProgmem(1);
 	Settings_NTC_line2.set_asProgmem(1);
+	
+	TcTypeSelection_line0.set_asProgmem(1);
+	TcTypeSelection_line1.set_asProgmem(1);
 	
 	SaveToEEPROM_line0.set_asProgmem(1);
 	SaveToEEPROM_line1.set_asProgmem(1);
@@ -289,6 +317,11 @@ void putInProgmem(void)
 	
 	Measuring_line0.set_asProgmem(1);
 	Measuring_line3.set_asProgmem(1);
+	
+	EndOfMeasures_line0.set_asProgmem(1);
+	EndOfMeasures_line1.set_asProgmem(1);
+	EndOfMeasures_line2.set_asProgmem(1);
+	EndOfMeasures_line3.set_asProgmem(1);
 }
 
 void enableScrolling(void)
@@ -302,11 +335,13 @@ void enableScrolling(void)
 	R_25_Selection_Screen.set_displayLineCount(LCD_ROWS);
 	B_value_selection_Screen.set_displayLineCount(LCD_ROWS);
 	RshuntSelection_Screen.set_displayLineCount(LCD_ROWS);
+	TcTypeSelection_Screen.set_displayLineCount(LCD_ROWS);
 	SaveToEEPROM_Screen.set_displayLineCount(LCD_ROWS);
 	SavedToEEPROM_Screen.set_displayLineCount(LCD_ROWS);
 	INA_Screen.set_displayLineCount(LCD_ROWS);
 	Launch_Screen.set_displayLineCount(LCD_ROWS);
 	Measuring_Screen.set_displayLineCount(LCD_ROWS);
+	EndOfMeasures_Screen.set_displayLineCount(LCD_ROWS);
 }
 
 void attachFunctionToLine(void)
@@ -317,8 +352,8 @@ void attachFunctionToLine(void)
 	welcome_line3.attach_function(1, gotoMainScreen);
 	
 	main_line1.attach_function(1, gotoSettingsScreen); //Start the settings screen
-	main_line2.attach_function(1, emptyfunction);
-	main_line3.attach_function(1, gotoLaunchScreen);
+	main_line2.attach_function(1, emptyfunction); //Live readings
+	main_line3.attach_function(1, gotoLaunchScreen); //Launch test
 	main_line4.attach_function(1, gotoINAScreen);
 	main_line5.attach_function(1, gotoLaunchScreen);
 	
@@ -327,7 +362,8 @@ void attachFunctionToLine(void)
 	Settings_line2.attach_function(1, gotoSettingsIntervalScreen);
 	Settings_line3.attach_function(1, gotoNTCScreen);
 	Settings_line4.attach_function(1, gotoRshuntSelectionScreen);
-	Settings_line5.attach_function(1, gotoSaveToEEPROMScreen);
+	Settings_line5.attach_function(1, gotoTcTypeSelectionScreen);
+	Settings_line6.attach_function(1, gotoSaveToEEPROMScreen);
 	
 	SettingsNumbeR_LINE_NTC0.attach_function(6, decrementNTC_nb); //left we decrement, right we increment
 	SettingsNumbeR_LINE_NTC0.attach_function(7, incrementNTC_nb);
@@ -370,6 +406,12 @@ void attachFunctionToLine(void)
 	RshuntSelection_line3.attach_function(1, resetRshuntToDefault );
 	RshuntSelection_line4.attach_function(1, gotoSettingsScreen);
 	
+	
+	TcTypeSelection_line0.attach_function(1, emptyfunction );
+	TcTypeSelection_line0.attach_function(6, decrementTcType );
+	TcTypeSelection_line0.attach_function(7, incrementTcType );
+	TcTypeSelection_line1.attach_function(1, gotoSettingsScreen );
+	
 	SettingsInterval_line1.attach_function(6, decrementTempsSec);
 	SettingsInterval_line1.attach_function(7, incrementTempsSec);
 	SettingsInterval_line2.attach_function(6, decrementTempsMin);
@@ -391,11 +433,13 @@ void attachFunctionToLine(void)
 	
 	Launch_line0.attach_function(1, emptyfunction);
 	Launch_line4.attach_function(1, gotoMeasuringScreen);
-	Launch_line4.attach_function(2, initMeasures); //TODO
+	Launch_line4.attach_function(2, launchMeasures); //TODO
 	Launch_line4.attach_function(3, firstLineSD);
 	Launch_line5.attach_function(1, gotoMainScreen);
 	
-	Measuring_line3.attach_function(1, emptyfunction );
+	Measuring_line3.attach_function(1,gotoEndOfMeasuresScreen);
+	
+	EndOfMeasures_line3.attach_function(1, gotoMainScreen );
 }
 
 void addScreens(void)
@@ -409,11 +453,13 @@ void addScreens(void)
 	menu.add_screen(R_25_Selection_Screen);
 	menu.add_screen(B_value_selection_Screen);
 	menu.add_screen(RshuntSelection_Screen);
+	menu.add_screen(TcTypeSelection_Screen);
 	menu.add_screen(SaveToEEPROM_Screen);
 	menu.add_screen(SavedToEEPROM_Screen);
 	menu.add_screen(INA_Screen);
 	menu.add_screen(Launch_Screen);
 	menu.add_screen(Measuring_Screen);
+	menu.add_screen(EndOfMeasures_Screen);
 }
 
 
@@ -474,6 +520,13 @@ void gotoRshuntSelectionScreen(void)
 	menu.switch_focus(true);
 }
 
+void gotoTcTypeSelectionScreen(void)
+{
+	previous_screen = menu.get_currentScreen();
+	menu.change_screen(TcTypeSelection_Screen);
+	menu.switch_focus(true);
+}
+
 void gotoSaveToEEPROMScreen(void)
 {
 	previous_screen = menu.get_currentScreen();
@@ -506,6 +559,13 @@ void gotoMeasuringScreen(void)
 {
 	previous_screen = menu.get_currentScreen();
 	menu.change_screen(Measuring_Screen);
+	menu.switch_focus(true);
+}
+
+void gotoEndOfMeasuresScreen(void)
+{
+	previous_screen = menu.get_currentScreen();
+	menu.change_screen(EndOfMeasures_Screen);
 	menu.switch_focus(true);
 }
 
@@ -652,13 +712,13 @@ void decrement1BFactor(void)
 {
 	if (B_FACTOR > 0)
 	{
-		B_FACTOR -=1;
+		B_FACTOR -= 1;
 	}
 }
 
 void increment1BFactor(void)
 {
-	B_FACTOR+=1;
+	B_FACTOR += 1;
 }
 
 void decrement10KR25(void)
@@ -722,6 +782,31 @@ void increment100Rshunt(void)
 void resetRshuntToDefault(void)
 {
 	R_SHUNT = 2000;
+}
+
+void incrementTcType(void)
+{
+	if(TC_Type_Counter <=7) //if we are not at the end of the array we can go forward
+	{
+		TC_Type_Counter++;
+	}
+	else{TC_Type_Counter = 0;} //return at the beginning
+	TC_Type = TC_Type_Array[TC_Type_Counter];
+}
+void decrementTcType(void)
+{
+	if(TC_Type_Counter > 0) //if we are not a the beginning we can go back
+	{
+		TC_Type_Counter--;
+	}
+	else{TC_Type_Counter = 7;}
+	TC_Type = TC_Type_Array[TC_Type_Counter];
+}
+
+const char* getTCType(void) //Todo check if it works
+{
+	const char *t = &TC_Type; //Create a new char on the stack with the value pointed by TC_Type
+	return t;
 }
 
 

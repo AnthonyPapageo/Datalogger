@@ -45,5 +45,4 @@ uint16_t ADCread(uint8_t channel)
 	result = ADCL;
 	result |= (ADCH<<8); 
 	return result; //TODO test return ADC;
-	
 }

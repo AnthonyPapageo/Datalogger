@@ -18,6 +18,9 @@ float V24_Measure_Array[2];
 float V5_Measure_Array[2];
 int32_t I_Measure_Array[4];//contain bus voltage and current TODO CAST getbusmillivolts in INT32
 uint32_t IntervalMeasure = 5;
+char TC_Type_Array[8] = {'T','K','J','N','R','S','B','E'};
+char TC_Type = 'T';
+uint8_t TC_Type_Counter = 0;
 
 /////////EEPROM DATA///////////
 uint8_t EEMEM NV_NTC_nb = 0;

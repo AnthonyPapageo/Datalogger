@@ -12,7 +12,8 @@
 #include "global.h"
 #include "menu.h"
 
-String FileName = "firstTest.csv";
+String FileName = "default.csv";
+String Path = "";
 
 void initMux(void)
 {
@@ -107,11 +108,11 @@ void LoadFromEEPROM(void)
 	IntervalMinutes = eeprom_read_byte(&NV_IntervalMinutes);
 	
 	R_SHUNT = eeprom_read_word(&NV_R_SHUNT);
-	if(NTC_nb == 255){correctEEPROM();} //Check if the EEPROM is not full of 1, if it is correct to the default value
+	if(NTC_nb == 255){correctEEPROM();} //Check if the EEPROM is not full of 1, if it is, correct to the default value
 
 }
 
-void correctEEPROM(void)
+void correctEEPROM(void) //This function is here because if Float are NaN the inc and decrement function won't work and without it you have to clear the EEPROM
 {
 	if(NTC_nb == 255){NTC_nb = 0; } 
 	if(TC_nb == 255){TC_nb = 0 ; }
@@ -130,39 +131,6 @@ void correctEEPROM(void)
 	}
 	saveToEEPROM();
 }
-
-
-/*void centerText(char *src,char *dest)
-{
-int8_t i,toPrint;
-uint8_t len;
-uint8_t compteur = 0;
-uint8_t toPrintBef;
-len = strlen(src);
-if(LCD_COL>20)
-{
-return;
-}
-toPrint = LCD_COL - len;//Compute how much to fill
-toPrintBef = (toPrint/2) -1;
-for(i=0; i<toPrintBef; i++)
-{
-dest[compteur] = ' ';
-compteur++;
-}
-for(i=0; i<len; i++ )
-{
-dest[compteur] = src[i];
-compteur++;
-}
-for(i=0; compteur < (LCD_COL-1); i++)
-{
-dest[compteur] = ' ';
-compteur++;
-}
-}*/
-
-
 
 void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbutton& up,Pushbutton& right, Pushbutton& Ok)
 {
@@ -205,10 +173,26 @@ void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbut
 	current_screen = menu.get_currentScreen();//update variable
 }
 
+void setFileName(void) //TODO : check string and const char conflict
+{
+	uint8_t seconds, minutes, hours,day,month;
+	uint16_t year;
+	String str = "";
+	DateTime datetime;
+	datetime = RTC.now();
+	str = String(datetime.day()) + "-" + String(datetime.month()) + "-" + String(datetime.year());
+	Path = "/" + str;
+	SD.begin(CS_DISABLE);
+	SD.mkdir(str);
+	FileName = Path + "/" + String(datetime.hour()) + "-" + String(datetime.minute()) + ".csv";
+	
+}
+
 void firstLineSD(void)
 {
 	uint8_t i;
 	String temp;
+	setFileName();
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	led_SD(true);//Assert that we are writing to the SD card
 	for(i = 0; i<TC_nb;i++)
