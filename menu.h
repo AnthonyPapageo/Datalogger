@@ -50,13 +50,22 @@ extern LiquidLine SettingsNumbeR_LINE_NTC4;
 extern LiquidLine SettingsNumbeR_LINE_NTC5;
 extern LiquidScreen SettingsNumber_Screen;
 
-
+//////Time
 //Interval
 extern LiquidLine SettingsInterval_line0;
 extern LiquidLine SettingsInterval_line1;
 extern LiquidLine SettingsInterval_line2;
 extern LiquidLine SettingsInterval_line3;
 extern LiquidScreen SettingsInterval_Screen;
+
+//Duration
+extern LiquidLine Duration_line0;
+extern LiquidLine Duration_line1;
+extern LiquidLine Duration_line2;
+extern LiquidLine Duration_line3;
+extern LiquidLine Duration_line4;
+extern LiquidScreen Duration_Screen;
+
 
 
 //NTC
@@ -154,6 +163,7 @@ void gotoMainScreen(void);
 void gotoSettingsScreen(void);
 void gotoSettingsNumberScreen(void);
 void gotoSettingsIntervalScreen(void);
+void gotoDurationScreen(void);
 void gotoNTCScreen(void);
 void gotoR25Screen(void);
 void gotoBValueSelectionScreen(void);
@@ -173,52 +183,10 @@ void attachFunctionToLine(void);
 void addScreens(void);
 void setGlyph(void);
 
-//////////Increment and decrement Functions/////////////
-//////Nb of measures
-void incrementNTC_nb(void);
-void decrementNTC_nb(void);
-void incrementTC_nb(void);
-void decrementTC_nb(void);
-void incrementI_nb(void);
-void decrementI_nb(void);
-void incrementV24_nb(void);
-void decrementV24_nb(void);
-void incrementV5_nb(void);
-void decrementV5_nb(void);
-
-////Interval
-void incrementTempsSec(void);
-void decrementTempsSec(void);
-void incrementTempsMin(void);
-void decrementTempsMin(void);
 
 
-//R_25
-void decrement10KR25(void);
-void increment10KR25(void);
-void decrement1KR25(void);
-void increment1KR25(void);
-void resetR25ToDefault(void);
+void endMeasures(void);
 
-//B_FACTOR
-void decrement100BFactor(void);
-void increment100BFactor(void);
-void decrement10BFactor(void);
-void increment10BFactor(void);
-void decrement1BFactor(void);
-void increment1BFactor(void);
-
-//R_SHUNT
-void decrement1000Rshunt(void);
-void increment1000Rshunt(void);
-void decrement100Rshunt(void);
-void increment100Rshunt(void);
-void resetRshuntToDefault(void);
-
-//TC_TYPE
-void incrementTcType(void);
-void decrementTcType(void);
-const char* getTCType(void);
 
 
 #endif /* MENU_H_ */

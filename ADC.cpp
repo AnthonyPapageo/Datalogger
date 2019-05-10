@@ -42,7 +42,6 @@ uint16_t ADCread(uint8_t channel)
 	ADCselectChannel(channel);
 	ADCstartConversion();
 	while((ADCSRA & (1 << ADIF)) == 0); //wait ADIF to be set to one
-	result = ADCL;
-	result |= (ADCH<<8); 
-	return result; //TODO test return ADC;
+	result = static_cast<float>(ADC);  //ADC is ADCH + ADCL
+	return result;
 }

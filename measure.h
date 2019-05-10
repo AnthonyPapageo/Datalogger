@@ -8,9 +8,8 @@
 #ifndef MEASURE_H_
 #define MEASURE_H_
 
-
-void initSensor(void);
-void launchMeasures(void);
+void initSensors(void);
+void computeTime(void);
 void getAllMeasures(void);
 void getTCMeasures(void);
 void getNTCMeasures(void);

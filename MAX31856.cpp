@@ -7,6 +7,7 @@
 #include "MAX31856.h"
 #ifdef __AVR
 #include <avr/pgmspace.h>
+#include <util/delay.h>
 #elif defined(ESP8266)
 #include <pgmspace.h>
 #endif
@@ -153,8 +154,6 @@ void MAX31856::oneShotTemperature(void) {
 	t |= (MAX31856_CR0_1SHOT);
 
 	writeRegister8(MAX31856_CR0_REG, t);
-
-	delay(250); // MEME FIX autocalculate based on oversampling
 }
 
 /**************************************************************************/
@@ -180,7 +179,6 @@ float MAX31856::readCJTemperature(void) {
 */
 /**************************************************************************/
 float MAX31856::readThermocoupleTemperature(void) {
-	oneShotTemperature();
 
 	int32_t temp24 = readRegister24(MAX31856_LTCBH_REG);
 	if (temp24 & 0x800000) {
@@ -193,6 +191,37 @@ float MAX31856::readThermocoupleTemperature(void) {
 	tempfloat *= 0.0078125;
 
 	return tempfloat;
+}
+
+void MAX31856::setAveraging(uint8_t n)
+{
+	uint8_t t;
+	switch(n) //Avoid using SQRT
+	{
+		case 1: 
+			n =0 ;
+			break;
+		case 2:
+			n =1;
+			break;
+		case 4:
+			n = 2;
+			break;
+		case 8:
+			n = 3;
+			break;
+		case 16:
+			n = 4;
+			break;
+		default:
+			n = 0;
+			break;
+	}
+	t = readRegister8(MAX31856_CR1_REG);
+	t &= 0x8f; //clear bit 4 to 6
+	t |=(n>>4); //Write the bit 4 to 6
+	writeRegister8(MAX31856_CR1_REG, t);
+	
 }
 
 /**********************************************/

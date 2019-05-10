@@ -5,22 +5,26 @@
 
 
 //DEBUG ZONE
-LiquidScreen* previous_screen = &main_Screen;
 LiquidScreen* current_screen = &main_Screen;
+RTC_DS3231 RTC;
 
 /////////MAX///////////
 MAX31856 max_array[20] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}; //Call the 20 constructor
 
 ////////MEASURE///////////
-float TC_Measure_Array[20];
-float NTC_Measure_Array[5];
-float V24_Measure_Array[2];
-float V5_Measure_Array[2];
-int32_t I_Measure_Array[4];//contain bus voltage and current TODO CAST getbusmillivolts in INT32
+float TC_Measure_Array[MAX_TC_NB];
+float NTC_Measure_Array[MAX_NTC_NB];
+float V24_Measure_Array[MAX_V24_NB];
+float V5_Measure_Array[MAX_V5_NB];
+int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current TODO CAST getbusmillivolts in INT32
 uint32_t IntervalMeasure = 5;
 char TC_Type_Array[8] = {'T','K','J','N','R','S','B','E'};
-char TC_Type = 'T';
+char TC_Type[2] = {'T',0}; // 0 = \0 so it stops printing, thanks Arnaud !
 uint8_t TC_Type_Counter = 0;
+uint32_t Nb_Of_Measure = 0;
+DateTime Global_Begin_Datetime;
+DateTime Global_Current_DateTime;
+DateTime Global_End_Datetime;
 
 /////////EEPROM DATA///////////
 uint8_t EEMEM NV_NTC_nb = 0;
@@ -33,6 +37,8 @@ float EEMEM NV_R_25 = 10000.0;
 uint8_t EEMEM NV_IntervalSeconds = 5;
 uint8_t EEMEM NV_IntervalMinutes = 0;
 uint16_t EEMEM NV_R_SHUNT = 2000;
+uint8_t EEMEM NV_TC_Type = uint8_t('T'); //cast back after 
+
 
 /////////NUMBER OF DEVICES ///////////
 uint8_t NTC_nb = 0;
@@ -45,6 +51,15 @@ uint8_t V5_nb = 0;
 uint8_t IntervalSeconds = 5;
 uint8_t IntervalMinutes = 0;
 
+/////////DURATION///////////
+uint8_t DurationHour = 0;
+uint8_t DurationMin = 1;
+uint8_t DurationSec = 0;
+
+/////////TIME ELAPSED///////
+uint8_t ElapsedSeconds = 0;
+uint8_t ElapsedMinutes = 0;
+uint16_t ElapsedHours = 0;
 
 //////////////LCD//////////////
 /*const uint8_t RS = 7;
@@ -180,7 +195,7 @@ namespace GLYPH
 	 const uint8_t NTC4 = 11;
 	 const uint8_t NTC5 = 12;
 }*/
-const uint8_t NTCChannel[5] = {8,9,10,11,12}; //NTC are on ADC8 to ADC12
+const uint8_t NTCChannel[MAX_NTC_NB] = {8,9,10,11,12}; //NTC are on ADC8 to ADC12
 const uint8_t V24Channel[MAX_V24_NB] = {13,14};
 const uint8_t V5Channel[MAX_V5_NB] = {3,2};
 

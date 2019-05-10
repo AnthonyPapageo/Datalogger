@@ -5,17 +5,26 @@
 
 #include <avr/io.h>
 #include <avr/eeprom.h>
+#include <util/delay.h>
 #include <string.h>
 #include <SD.h>
 
 #include "utility.h"
 #include "global.h"
 #include "menu.h"
+#include "measure.h"
 
 String FileName = "default.csv";
-String Path = "";
 
-void initMux(void)
+
+////////Static Prototype///////
+static void SdWriteInt(int32_t data);
+static void SdWriteFloat(float fdata, const uint8_t precision);
+static void correctEEPROM(void);
+static void SdWriteTime(void);
+
+
+/*void initMux(void)
 {
 	DDRE |= (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7); //MUX address data as output
 	DDRB |= (1 << 0) | (1 << 4) | (1 << 5) | (1 << 6);//SS , !CS_MUX, !EN_MUX, !WR_MUX as output
@@ -35,13 +44,50 @@ void setMux(const uint8_t value)
 		PORTB &= ~(1 << 0); //SS = 0
 		PORTB &= ~(1 << 5); //WR_MUX = 0 so we can latch
 		PORTE |= (value << 3); //Mux pins are on the 5 last pin of PORT E
-		delayMicroseconds(10);
+		_delay_us(10);
 		PORTB |= (1 << 5); //Latch address mux input
 	}
 	else if (value == CS_DISABLE)
 	{
 		PORTB |=(1 << 0); //SS = 1
 	}
+}*/
+
+void setMux(const uint8_t value) //Only for proto, need change for final version
+
+{
+	DDRH |= (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3); //OE MUX and data as output
+	PORTH &= ~(1 << 0); //OE MUX value = 0
+	DDRL |= (1 << 0);//OE BUF as output
+	
+	switch (value)
+	{
+		case 0:
+		PORTH &= ~(1 << 3); ///000
+		PORTH &= ~(1 << 2);
+		PORTH &= ~(1 << 1);
+		PORTL &= ~(1 << 0); //Enable 3v3 MISO by setting !OE_BUF at 0
+		break;
+		case 1:
+		PORTH |= (1 << 3); ///001
+		PORTH &= ~(1 << 2);
+		PORTH &= ~(1 << 1);
+		PORTL |= (1 << 0);//disable 3v3 MISO
+		break;
+		case 2:
+		PORTH &= ~(1 << 3); ///010
+		PORTH |= (1 << 2);
+		PORTH &= ~(1 << 1);
+		PORTL &= ~(1 << 0); //Enable 3v3 MISO by setting !OE_BUF at 0
+		break;
+		default:
+		PORTH |= (1 << 3);
+		PORTH |= (1 << 2);
+		PORTH |= (1 << 1);
+		PORTH |= (1 << 0); //disable mux
+		break;
+	}
+	_delay_us(20);
 }
 
 void initRTC(void)
@@ -67,10 +113,10 @@ void setVref(bool b)
 }
 
 
-bool IsSdInserted(void)
+bool IsSdInserted(void) //TODO CHANGE FOR FINAL
 {
-	DDRL &=~(1<<5); //SD_Detect as input
-	if (PINL & (1<<5)) //The pin is up so there is no SD card
+	DDRE &=~(1<<2); //SD_Detect as input
+	if (PINE & (1<<2)) //The pin is up so there is no SD card
 	{
 		return false;
 	}
@@ -78,10 +124,20 @@ bool IsSdInserted(void)
 	{
 		return true;
 	}
+	/*DDRL &=~(1<<5); //SD_Detect as input
+	if (PINL & (1<<5)) //The pin is up so there is no SD card
+	{
+		return false;
+	}
+	else			//The pin is set to ground, there is a SD card
+	{
+		return true;
+	}*/
 }
 
 void saveToEEPROM(void)
 {
+	cli();
 	eeprom_update_byte(&NV_NTC_nb, NTC_nb);
 	eeprom_update_byte(&NV_TC_nb, TC_nb);
 	eeprom_update_byte(&NV_I_nb, I_nb);
@@ -92,11 +148,13 @@ void saveToEEPROM(void)
 	eeprom_update_byte(&NV_IntervalSeconds, IntervalSeconds);
 	eeprom_update_byte(&NV_IntervalMinutes, IntervalMinutes);
 	eeprom_update_word(&NV_R_SHUNT, R_SHUNT);
-	
+	//eeprom_update_byte(&NV_TC_Type, static_cast<uint8_t>(TC_Type[0])); //because eeprom function use uint8_t
+	sei();
 }
 
 void LoadFromEEPROM(void)
 {
+	cli(); //TODO RETIRER needed or we can read corrupted data
 	NTC_nb = eeprom_read_byte(&NV_NTC_nb);
 	TC_nb = eeprom_read_byte(&NV_TC_nb);
 	I_nb = eeprom_read_byte(&NV_I_nb);
@@ -106,19 +164,22 @@ void LoadFromEEPROM(void)
 	B_FACTOR = eeprom_read_float(&NV_B_FACTOR);
 	IntervalSeconds = eeprom_read_byte(&NV_IntervalSeconds);
 	IntervalMinutes = eeprom_read_byte(&NV_IntervalMinutes);
-	
 	R_SHUNT = eeprom_read_word(&NV_R_SHUNT);
-	if(NTC_nb == 255){correctEEPROM();} //Check if the EEPROM is not full of 1, if it is, correct to the default value
-
+	//TC_Type[0] = static_cast<char>(eeprom_read_byte(&NV_TC_Type));	//because EEPROM function return uint8
+	if((NTC_nb > MAX_NTC_NB) ||( TC_nb > MAX_TC_NB) || (I_nb> MAX_I_NB) || (V5_nb > MAX_V5_NB) || (V24_nb > MAX_V24_NB)) //sketchy workaround TODO get it better
+	{
+		correctEEPROM();
+	} //Check if the EEPROM is not full of 1, if it is, correct to the default value
+	sei();
 }
 
-void correctEEPROM(void) //This function is here because if Float are NaN the inc and decrement function won't work and without it you have to clear the EEPROM
+static void correctEEPROM(void) //This function is here because if Float are NaN the inc and decrement function won't work and without it you have to clear the EEPROM
 {
-	if(NTC_nb == 255){NTC_nb = 0; } 
-	if(TC_nb == 255){TC_nb = 0 ; }
-	if(I_nb == 255){I_nb = 0; }
-	if(V24_nb ==255){V24_nb = 0; }
-	if(V5_nb ==255){V5_nb = 0; }
+	if(NTC_nb > MAX_NTC_NB){NTC_nb = 0;}
+	if(TC_nb > MAX_TC_NB){TC_nb = 0 ; }
+	if(I_nb > MAX_I_NB){I_nb = 0; }
+	if(V24_nb > MAX_V24_NB){V24_nb = 0; }
+	if(V5_nb > MAX_V5_NB){V5_nb = 0; }
 	if(R_SHUNT == 65535){R_SHUNT = 2000.0; }
 	
 	if(isnan(R_25))
@@ -148,12 +209,12 @@ void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbut
 	else if(right.isPressed())
 	{
 		menu.call_function(7); //Increment function saved on the seventh
-		delay(500);
+		_delay_ms(500);
 	}
 	else if(left.isPressed())
 	{
 		menu.call_function(6); //Decrement function saved on the sixth
-		delay(500);
+		_delay_ms(500);
 	}
 	else if(Ok.getSingleDebouncedPress())
 	{
@@ -166,35 +227,73 @@ void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbut
 			i++;
 		}
 	}
-	else if (back.getSingleDebouncedPress()) //TODO CHANGE TO GO BACK 1 LEVEL ABOVE
+	else if (back.getSingleDebouncedPress())
 	{
-		menu.previous_screen();
+		if((current_screen == &Settings_Screen) || (current_screen == &Launch_Screen) ) // Were are just after main screen
+		{
+			gotoMainScreen();
+		}
+		else if((current_screen == &R_25_Selection_Screen) || (current_screen == &B_value_selection_Screen))
+		{
+			gotoNTCScreen();
+		}
+		else if(current_screen != &Measuring_Screen)
+		{
+			gotoSettingsScreen();
+		}
 	}
 	current_screen = menu.get_currentScreen();//update variable
 }
 
-void setFileName(void) //TODO : check string and const char conflict
+
+void resetToDefault(void)
 {
-	uint8_t seconds, minutes, hours,day,month;
-	uint16_t year;
+	NTC_nb = 0;
+	TC_nb = 0;
+	I_nb = 0;
+	V24_nb = 0;
+	V5_nb = 0;
+	/////////INTERVAL///////////
+	IntervalSeconds = 1;
+	IntervalMinutes = 0;
+	/////////DURATION///////////
+	DurationHour = 0;
+	DurationMin = 1;
+	DurationSec = 0;
+	/////////TIME ELAPSED///////
+	ElapsedSeconds = 0;
+	ElapsedMinutes = 0;
+	ElapsedHours = 0;
+	
+	 B_FACTOR = 3977.0;
+	 R_25 = 10000.0;
+	 saveToEEPROM();
+}
+
+
+
+void setFileName(void)
+{
 	String str = "";
-	DateTime datetime;
-	datetime = RTC.now();
-	str = String(datetime.day()) + "-" + String(datetime.month()) + "-" + String(datetime.year());
-	Path = "/" + str;
-	SD.begin(CS_DISABLE);
+	str = String(Global_Begin_Datetime.day()) + "-" + String(Global_Begin_Datetime.month()) + "-" + String(Global_Begin_Datetime.year()); //Folder is date
+	str = "/" + str;
+	SD.begin(CS_SD);
 	SD.mkdir(str);
-	FileName = Path + "/" + String(datetime.hour()) + "-" + String(datetime.minute()) + ".csv";
+	FileName = str + "/" + String(Global_Begin_Datetime.hour()) + "-" + String(Global_Begin_Datetime.minute()) + ".csv"; //File is time of beginning
 	
 }
 
-void firstLineSD(void)
+void firstLineSD(void) //Write the header of the CSV file and get the beginning time
 {
 	uint8_t i;
 	String temp;
+	computeTime();
 	setFileName();
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	led_SD(true);//Assert that we are writing to the SD card
+	
+	dataFile.print("N°;");	
+	
 	for(i = 0; i<TC_nb;i++)
 	{
 		temp = "TC" + String(i+1) +";";
@@ -220,15 +319,21 @@ void firstLineSD(void)
 		temp = "I" + String(i+1) +";"; //I
 		dataFile.print(temp);
 	}
+	temp = "Date;";
+	dataFile.print(temp);
+		
+	temp = "Time;"; //last column
+	dataFile.print(temp);
+		
 	dataFile.close();
 	led_SD(false);
 }
 
 void saveToSD(void)
 {
-	uint8_t i,j;
+	uint8_t i;
 	String temp;
-	led_SD(true);//Assert that we are writing to the SD card
+	SdWriteInt(static_cast<int32_t>(Nb_Of_Measure)); // first column
 	for(i = 0; i<TC_nb;i++)
 	{
 		SdWriteFloat(TC_Measure_Array[i],1);
@@ -249,37 +354,57 @@ void saveToSD(void)
 	{
 		SdWriteInt(I_Measure_Array[i]);
 	}
+	
+	SdWriteTime();
+	
 	led_SD(false);
 	
 }
 
-void SdWriteInt(int32_t data)
+static void SdWriteInt(int32_t data)
 {
 	String string_data = ""; 
 	File dataFile = SD.open(FileName, FILE_WRITE);
-	led_SD(true);//Assert that we are writing to the SD card
 	string_data = String(data) + ";";
 	if(dataFile)
 	{
+		led_SD(true);//Assert that we are writing to the SD card
 		dataFile.print(string_data);
 		dataFile.close();
 	}
 	led_SD(false);
 }
 
-void SdWriteFloat(float fdata, const uint8_t precision )
+static void SdWriteFloat(float fdata, const uint8_t precision )
 {
 	String string_data = "";
 	File dataFile = SD.open(FileName, FILE_WRITE);
-	led_SD(true);//Assert that we are writing to the SD card
 	string_data = String(fdata,precision) + ";";
 	if(dataFile)
 	{
+		led_SD(true);//Assert that we are writing to the SD card
 		dataFile.print(string_data);
 		dataFile.close();
 	}
 	led_SD(false);
 }
+
+static void SdWriteTime(void) //first the date then the time
+{
+	String temp;
+	DateTime dt = RTC.now();
+	Global_Current_DateTime = dt;
+	File dataFile = SD.open(FileName, FILE_WRITE);
+	if(dataFile)
+	{
+		led_SD(true);
+		temp = String(dt.day()) + "-" + String(dt.month()) + ";";
+		dataFile.print(temp);
+		temp = String(dt.hour()) + "-"  + String(dt.minute()) + "-" + String(dt.second()) + ";" ;
+	}
+	led_SD(false);
+}
+
 
 void led_SD(bool b)
 {
@@ -298,6 +423,7 @@ void led_SD(bool b)
 void emptyfunction(void) //To attach to line to enable scrolling
 {
 }
+
 
 
 

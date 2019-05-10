@@ -14,76 +14,77 @@
 
 float R_INF;
 
-
-
-
-void initSensor(void)
+void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 {
-	uint8_t i; 
-	ADCinit(); // initialize and progress a dummy conversion
-	for (i = 0; i<TC_nb; i++) //Setup T_type TC and filter 50Hz
+	uint8_t i;
+	ADCinit(); // initialize and progress a dummy conversion and enable VREF
+	
+	if(I_nb>0) //Init INA
+	{
+		INA.setI2CSpeed(I2C_SPEED);
+		INA.begin(3, R_SHUNT,1); //Init INA device for I1a or I1b with Shunt from user
+		if(I_nb ==2)
+		{
+			INA.begin(3, DEFAULT_R_SHUNT,2); //I2 device has a fixed shunt, If I_nb ==2, I2 is used
+		}
+		INA.setBusConversion(8500); // Maximum conversion time 8.244ms
+		INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
+		INA.setAveraging(128); //Average 128 readings
+		INA.setMode(INA_MODE_CONTINUOUS_BOTH);
+	}
+	
+	for (i = 0; i<TC_nb; i++) //filter 50Hz
 	{
 		max_array[i].begin();
 		max_array[i].oneShotTemperature(); //dummy conversion for init
+		max_array[i].setAveraging(4); //Average 4 mesure
 	}
-}
-
-void launchMeasures(void)
-{
-	uint8_t i;
-	INA.setI2CSpeed(I2C_SPEED);
-	INA.begin(3, R_SHUNT,1); //Init INA device for I1a or I1b with Shunt from user
-	INA.begin(3, DEFAULT_R_SHUNT,2); //I2 device has a fixed shunt
-	INA.setBusConversion(8500); // Maximum conversion time 8.244ms
-	INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
-	INA.setAveraging(128); //Average 128 readings
-	INA.setMode(INA_MODE_CONTINUOUS_BOTH);
 	
-	if(TC_Type != 'T') //By default it's T type so we don't need to change the type
+	if(TC_Type[0] != 'T') //By default it's T type so we don't need to change the type
 	{
-		if (TC_Type == 'K')
+		if (TC_Type[0] == 'K')
 		{
 			for (i = 0; i<TC_nb; i++)
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_K);
 			}
 		}
-		else if(TC_Type == 'J')
+		else if(TC_Type[0] == 'J')
 		{
 			for (i = 0; i<TC_nb; i++)
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_T);
 			}
 		}
-		else if(TC_Type == 'N')
+		else if(TC_Type[0] == 'N')
 		{
 			for (i = 0; i<TC_nb; i++)
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_N);
 			}
 		}
-		else if(TC_Type == 'R')
+		else if(TC_Type[0] == 'R')
 		{
 			for (i = 0; i<TC_nb; i++)
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_R);
 			}
 		}
-		else if(TC_Type == 'S')
+		else if(TC_Type[0] == 'S')
 		{
 			for (i = 0; i<TC_nb; i++)
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_S);
 			}
 		}
-		else if(TC_Type == 'B')
+		else if(TC_Type[0] == 'B')
 		{
 			for (i = 0; i<TC_nb; i++) //Setup
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_B);
 			}
 		}
-		else if(TC_Type == 'E')
+		else if(TC_Type[0] == 'E')
 		{
 			for (i = 0; i<TC_nb; i++)
 			{
@@ -91,21 +92,50 @@ void launchMeasures(void)
 			}
 		}
 	}//end if
-	
-		
-	R_INF = R_25*exp((-1*B_FACTOR)/298.15); //compute the term once so we avoid calculing it everytime
-	IntervalMeasure = (60 * IntervalMinutes) + IntervalSeconds;
-	IntervalMeasure *= 1000; //transform in milliseconds
+			
+	R_INF = R_25*exp((-1*B_FACTOR)/298.15); //compute the term once so we avoid computing it everytime
 	
 }
 
-void getAllMeasures(void)
+void computeTime(void)
 {
-	getTCMeasures();
+	uint32_t TimeInSeconds;
+	IntervalMeasure = (60 * IntervalMinutes) + IntervalSeconds;
+	IntervalMeasure *= 1000; //transform in milliseconds
+	Global_Begin_Datetime = RTC.now();
+	TimeInSeconds = (DurationHour*3600) + (DurationMin * 60) + DurationSec;
+	Global_End_Datetime = Global_Begin_Datetime + TimeSpan(TimeInSeconds);
+}
+
+
+void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other measure then get back to the max to get the result of the conversion
+{
+	uint8_t i;
+	uint32_t temp;
+	PORTA ^= (1<<1);//todo retiré led
+	
+	temp = millis();
+	for (i = 0; i<TC_nb; i++)
+	{
+		max_array[i].oneShotTemperature(); //Tell each MAX to begin a conversion
+	}
 	getNTCMeasures();
 	getV24Measures();
 	getV5Measures();
 	getIMeasures();
+	while(millis() < temp + 500); //we the other measures didn't take more than 500ms, we wait here
+	for (i = 0; i<TC_nb; i++)
+	{
+		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature(); //read the temperature for each max
+	}
+	
+	Nb_Of_Measure++;
+	if(Nb_Of_Measure == 65534) //max number of line for excel -1 (first line is header)
+	{
+		setFileName();
+		Nb_Of_Measure = 0;
+	}
+	PORTA ^= (1<<1);
 }
 
 void getTCMeasures(void)
@@ -113,7 +143,11 @@ void getTCMeasures(void)
 	uint8_t i;
 	for (i = 0; i<TC_nb; i++)
 	{
-		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature();
+		max_array[i].oneShotTemperature(); //Tell each MAX to begin a conversion
+	}
+	for (i = 0; i<TC_nb; i++)
+	{
+		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature(); //read the temperature for each max
 	}
 }
 
@@ -133,7 +167,6 @@ void getNTCMeasures(void)
 void getV24Measures(void)
 {
 	uint8_t i;
-	float voltage;
 	for (i = 0; i< V24_nb;i++)
 	{
 		V24_Measure_Array[i] = static_cast<float>(ADCread(V24Channel[i])); ///value from 0-1023 = ADC register
@@ -144,7 +177,6 @@ void getV24Measures(void)
 void getV5Measures(void)
 {
 	uint8_t i;
-	float voltage;
 	for (i = 0; i < V5_nb; i++)
 	{
 		V5_Measure_Array[i] = static_cast<float>(ADCread(V5Channel[i])); //value from 0-1023 = ADC register
@@ -156,7 +188,6 @@ void getIMeasures(void)
 {
 	uint8_t i;
 	uint8_t j;
-	int32_t temp;
 	for (i = 1; i<=I_nb;i++)
 	{
 		for(j=0; j<2;j++) //2 measures we get only Current and BUS voltage

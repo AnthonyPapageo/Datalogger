@@ -6,10 +6,73 @@
 */
 
 #include <LiquidMenu.h>
+#include <util/delay.h>
 #include "global.h"
 #include "utility.h"
 #include "menu.h"
 #include "measure.h"
+
+
+
+static void incrementNTC_nb(void);
+static void decrementNTC_nb(void);
+static void incrementTC_nb(void);
+static void decrementTC_nb(void);
+static void incrementI_nb(void);
+static void decrementI_nb(void);
+static void incrementV24_nb(void);
+static void decrementV24_nb(void);
+static void incrementV5_nb(void);
+static void decrementV5_nb(void);
+
+////Interval
+static void incrementTempsSec(void);
+static void decrementTempsSec(void);
+static void incrementTempsMin(void);
+static void decrementTempsMin(void);
+
+
+//R_25
+static void decrement10KR25(void);
+static void increment10KR25(void);
+static void decrement1KR25(void);
+static void increment1KR25(void);
+static void resetR25ToDefault(void);
+
+//B_FACTOR
+static void resetBFactorToDefault(void);
+static void decrement100BFactor(void);
+static void increment100BFactor(void);
+static void decrement10BFactor(void);
+static void increment10BFactor(void);
+static void decrement1BFactor(void);
+static void increment1BFactor(void);
+
+//R_SHUNT
+static void decrement1000Rshunt(void);
+static void increment1000Rshunt(void);
+static void decrement100Rshunt(void);
+static void increment100Rshunt(void);
+static void resetRshuntToDefault(void);
+
+//TC_TYPE
+static void incrementTcType(void);
+static void decrementTcType(void);
+const char* getTCType(void);
+
+/////////ELAPSED TIME///////
+static void getElapsedTime(void);
+static void resetNumberOfMeasure(void);
+
+
+//Duration
+static void incrementDurationHour(void);
+static void decrementDurationHour(void);
+static void incrementDurationMinute(void);
+static void decrementDurationMinute(void);
+static void incrementDurationSec(void);
+static void decrementDurationSec(void);
+
 
 
 /////////////STRINGS//////////////////////
@@ -48,6 +111,7 @@ const char Settings_text3[] PROGMEM = "3: NTC CONFIG";
 const char Settings_text4[] PROGMEM = "4: SHUNT VALUE";
 const char Settings_text5[] PROGMEM = "5: TC TYPE";
 const char Settings_text6[] PROGMEM = "6: SAVE CONFIG"; //Maybe plusieurs configuration
+const char Settings_text7[] PROGMEM = "7: RESET TO DEFAULT";
 LiquidLine Settings_line0(1,0,Settings_text0);
 LiquidLine Settings_line1(1,1,Settings_text1);
 LiquidLine Settings_line2(1,2,Settings_text2);
@@ -55,6 +119,7 @@ LiquidLine Settings_line3(1,3,Settings_text3);
 LiquidLine Settings_line4(1,4,Settings_text4);
 LiquidLine Settings_line5(1,5,Settings_text5);
 LiquidLine Settings_line6(1,6,Settings_text6);
+LiquidLine Settings_line7(1,7,Settings_text7);
 LiquidScreen Settings_Screen(Settings_line0,Settings_line1,Settings_line2,Settings_line3,Settings_line4,Settings_line5,Settings_line6);
 
 
@@ -74,6 +139,8 @@ LiquidLine SettingsNumbeR_LINE_NTC4(1,4,SettingsNumber_text4, GLYPH::leftArrowIn
 LiquidLine SettingsNumbeR_LINE_NTC5(1,5,SettingsNumber_text5);
 LiquidScreen SettingsNumber_Screen(SettingsNumbeR_LINE_NTC0,SettingsNumbeR_LINE_NTC1,SettingsNumbeR_LINE_NTC2,SettingsNumbeR_LINE_NTC3,SettingsNumbeR_LINE_NTC4,SettingsNumbeR_LINE_NTC5);
 
+
+///Time
 //interval
 const char SettingsInterval_text0[] PROGMEM = "Interval of capture ?";
 const char SettingsInterval_text1[] PROGMEM = "seconds : ";
@@ -84,6 +151,22 @@ LiquidLine SettingsInterval_line1(1,1,SettingsInterval_text1, GLYPH::leftArrowIn
 LiquidLine SettingsInterval_line2(1,2,SettingsInterval_text2, GLYPH::leftArrowIndex, IntervalMinutes, GLYPH::rightArrowIndex);
 LiquidLine SettingsInterval_line3(1,3,SettingsInterval_text3);
 LiquidScreen SettingsInterval_Screen(SettingsInterval_line0,SettingsInterval_line1,SettingsInterval_line2,SettingsInterval_line3);
+
+//Duration
+
+const char Duration_text0[] PROGMEM = "Duration of test :";
+const char Duration_text1[] PROGMEM = "hour : ";
+const char Duration_text2[] PROGMEM = "min  : ";
+const char Duration_text3[] PROGMEM = "sec  : ";
+const char Duration_text4[] PROGMEM = "LAUNCH TEST";
+LiquidLine Duration_line0(1,0, Duration_text0);
+LiquidLine Duration_line1(1,1, Duration_text1, GLYPH::leftArrowIndex, DurationHour, GLYPH::rightArrowIndex);
+LiquidLine Duration_line2(1,2, Duration_text2, GLYPH::leftArrowIndex, DurationMin, GLYPH::rightArrowIndex);
+LiquidLine Duration_line3(1,3, Duration_text3, GLYPH::leftArrowIndex, DurationSec, GLYPH::rightArrowIndex);
+LiquidLine Duration_line4(1,4, Duration_text4);
+LiquidScreen Duration_Screen(Duration_line0,Duration_line1,Duration_line2,Duration_line3,Duration_line4);
+
+
 
 
 //NTC
@@ -101,7 +184,7 @@ const char R_25_Selection_text1[] = " - 10K +";
 const char R_25_Selection_text2[] = " - 1K  +";
 const char R_25_Selection_text3[] = "Reset to default";
 const char R_25_Selection_text4[] = "BACK";
-LiquidLine R_25_Selection_line0(1,0,R_25_Selection_text0, R_25, "kOhm");
+LiquidLine R_25_Selection_line0(1,0,R_25_Selection_text0, R_25, " Ohm");
 LiquidLine R_25_Selection_line1(1,1,GLYPH::leftArrowIndex, R_25_Selection_text1, GLYPH::rightArrowIndex);
 LiquidLine R_25_Selection_line2(1,2,GLYPH::leftArrowIndex, R_25_Selection_text2, GLYPH::rightArrowIndex);
 LiquidLine R_25_Selection_line3(1,3,R_25_Selection_text3);
@@ -114,13 +197,15 @@ const char B_value_selection_text0[] = "B = ";
 const char B_value_selection_text1[] = " - 100 + ";
 const char B_value_selection_text2[] = " - 10  + ";
 const char B_value_selection_text3[] = " - 1   + ";
-const char B_value_selection_text4[] = "BACK";
+const char B_value_selection_text4[] = "Reset to default";
+const char B_value_selection_text5[] = "BACK";
 LiquidLine B_value_selection_line0(1,0,B_value_selection_text0, B_FACTOR, " K"); //Set decimal
 LiquidLine B_value_selection_line1(1,1,GLYPH::leftArrowIndex, B_value_selection_text1 , GLYPH::rightArrowIndex);
 LiquidLine B_value_selection_line2(1,2,GLYPH::leftArrowIndex, B_value_selection_text2 , GLYPH::rightArrowIndex);
 LiquidLine B_value_selection_line3(1,3,GLYPH::leftArrowIndex, B_value_selection_text3 , GLYPH::rightArrowIndex);
-LiquidLine B_value_selection_line4(1,4,B_value_selection_text4);
-LiquidScreen B_value_selection_Screen(B_value_selection_line0,B_value_selection_line1,B_value_selection_line2,B_value_selection_line3, B_value_selection_line4);
+LiquidLine B_value_selection_line4(1,4, B_value_selection_text4);
+LiquidLine B_value_selection_line5(1,5,B_value_selection_text5);
+LiquidScreen B_value_selection_Screen(B_value_selection_line0,B_value_selection_line1,B_value_selection_line2,B_value_selection_line3,B_value_selection_line4 ,B_value_selection_line5);
 
 //Rshunt
 const char RshuntSelection_text0[] = "Rshunt = ";
@@ -136,7 +221,7 @@ LiquidLine RshuntSelection_line4(1,4,RshuntSelection_text4);
 LiquidScreen RshuntSelection_Screen(RshuntSelection_line0,RshuntSelection_line1,RshuntSelection_line2,RshuntSelection_line3,RshuntSelection_line4);
 
 //TC TYPE
-const char TcTypeSelection_text0[] PROGMEM = "TC TYPE =  ";
+const char TcTypeSelection_text0[] PROGMEM = "TC TYPE = ";
 const char TcTypeSelection_text1[] PROGMEM = "BACK";
 LiquidLine TcTypeSelection_line0(1,0, TcTypeSelection_text0, GLYPH::leftArrowIndex, getTCType, GLYPH::rightArrowIndex);
 LiquidLine TcTypeSelection_line1(1,1, TcTypeSelection_text1);
@@ -190,11 +275,11 @@ LiquidScreen Launch_Screen(Launch_line0,Launch_line1,Launch_line2,Launch_line3,L
 
 
 //////////////MEASURING///////////////
-const char Measuring_text0[] PROGMEM = "Time elapsed";
+const char Measuring_text0[] PROGMEM = "Number of measure :";
 const char Measuring_text2[] PROGMEM = "";
 const char Measuring_text3[] PROGMEM = "STOP test";
 LiquidLine Measuring_line0(1,0, Measuring_text0);
-LiquidLine Measuring_line1(1,1, Measuring_text2);
+LiquidLine Measuring_line1(1,1, Nb_Of_Measure);
 LiquidLine Measuring_line2(1,2, Measuring_text2);
 LiquidLine Measuring_line3(1,3, Measuring_text3);
 LiquidScreen Measuring_Screen(Measuring_line0,Measuring_line1,Measuring_line2,Measuring_line3);
@@ -202,21 +287,24 @@ LiquidScreen Measuring_Screen(Measuring_line0,Measuring_line1,Measuring_line2,Me
 
 //End of measures
 const char EndOfMeasures_text0[] PROGMEM = "Test finished !";
-const char EndOfMeasures_text1[] PROGMEM = "Number of measures :";
-const char EndOfMeasures_text2[] PROGMEM = "Time elapsed :";
+const char EndOfMeasures_text1[] PROGMEM = "Nb of measures :";
 const char EndOfMeasures_text3[] PROGMEM = "OK ";
 LiquidLine EndOfMeasures_line0(1,0, EndOfMeasures_text0);
-LiquidLine EndOfMeasures_line1(1,1, EndOfMeasures_text1);
-LiquidLine EndOfMeasures_line2(1,2, EndOfMeasures_text2);
+LiquidLine EndOfMeasures_line1(1,1, EndOfMeasures_text1, Nb_Of_Measure);
+LiquidLine EndOfMeasures_line2(1,2, "Time :", ElapsedHours, "h ", ElapsedMinutes);
 LiquidLine EndOfMeasures_line3(1,3, EndOfMeasures_text3);
 LiquidScreen EndOfMeasures_Screen(EndOfMeasures_line0,EndOfMeasures_line1,EndOfMeasures_line2,EndOfMeasures_line3);
 
 
 void AddVariableToLine(void)
 {
-	Launch_line1.add_variable(" I=");
+	Settings_Screen.add_line(Settings_line7); //Reset to default line
+	Launch_line1.add_variable(" I="); // Show the setup
 	Launch_line1.add_variable( I_nb);
 	Launch_line3.add_variable("s");
+	EndOfMeasures_line2.add_variable("min"); // Show the elapsed time
+	EndOfMeasures_line2.add_variable(ElapsedSeconds);
+	EndOfMeasures_line2.add_variable("s");
 }
 
 void setGlyph(void)
@@ -236,6 +324,13 @@ void setGlyph(void)
 	SettingsInterval_line1.set_asGlyph(4);
 	SettingsInterval_line2.set_asGlyph(2);
 	SettingsInterval_line2.set_asGlyph(4);
+	
+	Duration_line1.set_asGlyph(2);
+	Duration_line1.set_asGlyph(4);
+	Duration_line2.set_asGlyph(2);
+	Duration_line2.set_asGlyph(4);
+	Duration_line3.set_asGlyph(2);
+	Duration_line3.set_asGlyph(4);
 	
 	R_25_Selection_line1.set_asGlyph(1);
 	R_25_Selection_line1.set_asGlyph(3);
@@ -279,6 +374,7 @@ void putInProgmem(void)
 	Settings_line4.set_asProgmem(1);
 	Settings_line5.set_asProgmem(1);
 	Settings_line6.set_asProgmem(1);
+	Settings_line7.set_asProgmem(1);
 	
 	SettingsNumbeR_LINE_NTC0.set_asProgmem(1);
 	SettingsNumbeR_LINE_NTC1.set_asProgmem(1);
@@ -292,6 +388,12 @@ void putInProgmem(void)
 	SettingsInterval_line2.set_asProgmem(1);
 	SettingsInterval_line3.set_asProgmem(1);
 	
+	Duration_line0.set_asProgmem(1);
+	Duration_line1.set_asProgmem(1);
+	Duration_line2.set_asProgmem(1);
+	Duration_line3.set_asProgmem(1);
+	Duration_line4.set_asProgmem(1);
+	
 	Settings_NTC_line0.set_asProgmem(1);
 	Settings_NTC_line1.set_asProgmem(1);
 	Settings_NTC_line2.set_asProgmem(1);
@@ -303,6 +405,7 @@ void putInProgmem(void)
 	SaveToEEPROM_line1.set_asProgmem(1);
 	SaveToEEPROM_line2.set_asProgmem(1);
 	SaveToEEPROM_line3.set_asProgmem(1);
+	
 	SavedToEEPROM_line0.set_asProgmem(1);
 	SavedToEEPROM_line1.set_asProgmem(1);
 	
@@ -316,11 +419,12 @@ void putInProgmem(void)
 	Launch_line5.set_asProgmem(1);
 	
 	Measuring_line0.set_asProgmem(1);
+	Measuring_line2.set_asProgmem(1);
 	Measuring_line3.set_asProgmem(1);
 	
 	EndOfMeasures_line0.set_asProgmem(1);
 	EndOfMeasures_line1.set_asProgmem(1);
-	EndOfMeasures_line2.set_asProgmem(1);
+	//EndOfMeasures_line2.set_asProgmem(1);
 	EndOfMeasures_line3.set_asProgmem(1);
 }
 
@@ -331,6 +435,7 @@ void enableScrolling(void)
 	Settings_Screen.set_displayLineCount(LCD_ROWS);
 	SettingsNumber_Screen.set_displayLineCount(LCD_ROWS);
 	SettingsInterval_Screen.set_displayLineCount(LCD_ROWS);
+	Duration_Screen.set_displayLineCount(LCD_ROWS);
 	Settings_NTC_Screen.set_displayLineCount(LCD_ROWS);
 	R_25_Selection_Screen.set_displayLineCount(LCD_ROWS);
 	B_value_selection_Screen.set_displayLineCount(LCD_ROWS);
@@ -358,12 +463,14 @@ void attachFunctionToLine(void)
 	main_line5.attach_function(1, gotoLaunchScreen);
 	
 
+	Settings_line0.attach_function(1, gotoMainScreen);
 	Settings_line1.attach_function(1, gotoSettingsNumberScreen);
 	Settings_line2.attach_function(1, gotoSettingsIntervalScreen);
 	Settings_line3.attach_function(1, gotoNTCScreen);
 	Settings_line4.attach_function(1, gotoRshuntSelectionScreen);
 	Settings_line5.attach_function(1, gotoTcTypeSelectionScreen);
 	Settings_line6.attach_function(1, gotoSaveToEEPROMScreen);
+	Settings_line7.attach_function(1, resetToDefault);
 	
 	SettingsNumbeR_LINE_NTC0.attach_function(6, decrementNTC_nb); //left we decrement, right we increment
 	SettingsNumbeR_LINE_NTC0.attach_function(7, incrementNTC_nb);
@@ -396,7 +503,8 @@ void attachFunctionToLine(void)
 	B_value_selection_line2.attach_function(7, increment10BFactor);
 	B_value_selection_line3.attach_function(6, decrement1BFactor);
 	B_value_selection_line3.attach_function(7, increment1BFactor);
-	B_value_selection_line4.attach_function(1, gotoNTCScreen);
+	B_value_selection_line4.attach_function(1, resetBFactorToDefault);
+	B_value_selection_line5.attach_function(1, gotoNTCScreen);
 	
 	//RshuntSelection_line0.attach_function(1, emptyfunction );
 	RshuntSelection_line1.attach_function(6, decrement1000Rshunt );
@@ -425,21 +533,33 @@ void attachFunctionToLine(void)
 	SavedToEEPROM_line0.attach_function(1, gotoSettingsScreen);
 	SavedToEEPROM_line1.attach_function(1, gotoSettingsScreen);
 	
-	
 	INA_line0.attach_function(1, emptyfunction);
 	INA_line1.attach_function(1, emptyfunction);
 	INA_line2.attach_function(1, emptyfunction);
 	INA_line3.attach_function(1, gotoMainScreen);//return to main menu
 	
-	Launch_line0.attach_function(1, emptyfunction);
-	Launch_line4.attach_function(1, gotoMeasuringScreen);
-	Launch_line4.attach_function(2, launchMeasures); //TODO
-	Launch_line4.attach_function(3, firstLineSD);
+	//todo change first line
+	Launch_line1.attach_function(1,emptyfunction);
+	/*Launch_line2.attach_function(1,emptyfunction);
+	Launch_line3.attach_function(1,emptyfunction);*/
+	Launch_line4.attach_function(1, initSensors);
+	Launch_line4.attach_function(2, gotoDurationScreen);
 	Launch_line5.attach_function(1, gotoMainScreen);
 	
-	Measuring_line3.attach_function(1,gotoEndOfMeasuresScreen);
+	//Duration_line0.attach_function(1, emptyfunction );
+	Duration_line1.attach_function(6, decrementDurationHour);
+	Duration_line1.attach_function(7, incrementDurationHour);
+	Duration_line2.attach_function(6, decrementDurationMinute);
+	Duration_line2.attach_function(7, incrementDurationMinute);
+	Duration_line3.attach_function(6, decrementDurationSec);
+	Duration_line3.attach_function(7, incrementDurationSec);
+	Duration_line4.attach_function(1, firstLineSD);
+	Duration_line4.attach_function(2, gotoMeasuringScreen);//Launch the measures
 	
-	EndOfMeasures_line3.attach_function(1, gotoMainScreen );
+	Measuring_line3.attach_function(1, endMeasures);
+	
+	EndOfMeasures_line3.attach_function(1,resetNumberOfMeasure );
+	EndOfMeasures_line3.attach_function(2,gotoMainScreen );
 }
 
 void addScreens(void)
@@ -449,6 +569,7 @@ void addScreens(void)
 	menu.add_screen(Settings_Screen);
 	menu.add_screen(SettingsNumber_Screen);
 	menu.add_screen(SettingsInterval_Screen);
+	menu.add_screen(Duration_Screen);
 	menu.add_screen(Settings_NTC_Screen);
 	menu.add_screen(R_25_Selection_Screen);
 	menu.add_screen(B_value_selection_Screen);
@@ -464,119 +585,121 @@ void addScreens(void)
 
 
 void gotoMainScreen(void)
-
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(main_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoSettingsScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(Settings_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoSettingsNumberScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(SettingsNumber_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoSettingsIntervalScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(SettingsInterval_Screen);
+	menu.switch_focus(true);
+}
+
+void gotoDurationScreen(void)
+{
+	menu.change_screen(Duration_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoNTCScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(Settings_NTC_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoR25Screen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(R_25_Selection_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoBValueSelectionScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(B_value_selection_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoRshuntSelectionScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
+	
 	menu.change_screen(RshuntSelection_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoTcTypeSelectionScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(TcTypeSelection_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoSaveToEEPROMScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(SaveToEEPROM_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoSavedToEEPROMScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(SavedToEEPROM_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoINAScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(INA_Screen);
 	menu.switch_focus(true);
 }
 
-void gotoLaunchScreen(void)
+void gotoLaunchScreen(void) //check if we can save things
 {
-	previous_screen = menu.get_currentScreen();
+	while(!IsSdInserted())
+	{
+		lcd.clear();
+		lcd.home();
+		lcd.print(F("ERROR SD CARD "));
+		lcd.setCursor(0,1);
+		lcd.print(F("NOT FOUND"));
+		lcd.setCursor(0,2);
+		lcd.print(F("Insert an SD card"));
+		_delay_ms(500); //weird bug with delay here so using the avr one
+	}
 	menu.change_screen(Launch_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoMeasuringScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(Measuring_Screen);
 	menu.switch_focus(true);
 }
 
 void gotoEndOfMeasuresScreen(void)
 {
-	previous_screen = menu.get_currentScreen();
 	menu.change_screen(EndOfMeasures_Screen);
 	menu.switch_focus(true);
 }
 
-void incrementNTC_nb(void)
+static void incrementNTC_nb(void)
 {
-	if( NTC_nb != 5) //We can add an NTC because we are not yet full
+	if( NTC_nb != MAX_NTC_NB) //We can add an NTC because we are not yet full
 	{
 		NTC_nb++;
 	}
 }
-void decrementNTC_nb(void)
+static void decrementNTC_nb(void)
 {
 	if (NTC_nb != 0) //We are not at 0 and we want to remove one so we can
 	{
@@ -584,14 +707,14 @@ void decrementNTC_nb(void)
 	}
 }
 
-void incrementTC_nb(void)
+static void incrementTC_nb(void)
 {
-	if(TC_nb != 20) //We can add an TC because we are not yet full
+	if(TC_nb != MAX_TC_NB) //We can add an TC because we are not yet full
 	{
 		TC_nb++;
 	}
 }
-void decrementTC_nb(void)
+static void decrementTC_nb(void)
 {
 	if (TC_nb != 0) //We are not at 0 and we want to remove one so we can
 	{
@@ -599,15 +722,15 @@ void decrementTC_nb(void)
 	}
 }
 
-void incrementI_nb(void)
+static void incrementI_nb(void)
 {
-	if(I_nb != 2) //We can add an I because we are not yet full
+	if(I_nb != MAX_I_NB) //We can add an I because we are not yet full
 	{
 		I_nb++;
 	}
 }
 
-void decrementI_nb(void)
+static void decrementI_nb(void)
 {
 	if (I_nb != 0) //We are not at 0 and we want to remove one so we can
 	{
@@ -615,15 +738,15 @@ void decrementI_nb(void)
 	}
 }
 
-void incrementV24_nb(void)
+static void incrementV24_nb(void)
 {
-	if(V24_nb != 2) //We can add an V because we are not yet full
+	if(V24_nb != MAX_V24_NB) //We can add an V because we are not yet full
 	{
 		V24_nb++;
 	}
 }
 
-void decrementV24_nb(void)
+static void decrementV24_nb(void)
 {
 	if (V24_nb != 0) //We are not at 0 and we want to remove one so we can
 	{
@@ -631,15 +754,15 @@ void decrementV24_nb(void)
 	}
 }
 
-void incrementV5_nb(void)
+static void incrementV5_nb(void)
 {
-	if(V5_nb != 2) //We can add an V because we are not yet full
+	if(V5_nb != MAX_V5_NB) //We can add an V because we are not yet full
 	{
 		V5_nb++;
 	}
 }
 
-void decrementV5_nb(void)
+static void decrementV5_nb(void)
 {
 	if (V5_nb != 0) //We are not at 0 and we want to remove one so we can
 	{
@@ -647,7 +770,7 @@ void decrementV5_nb(void)
 	}
 }
 
-void incrementTempsSec(void)
+static void incrementTempsSec(void)
 {
 	IntervalSeconds++;
 	if(IntervalSeconds == 60)
@@ -657,15 +780,15 @@ void incrementTempsSec(void)
 	}
 }
 
-void decrementTempsSec(void)
+static void decrementTempsSec(void)
 {
-	if(IntervalSeconds > 5)
+	if((IntervalMinutes > 0) || (IntervalSeconds > 1))
 	{
 		IntervalSeconds--;
 	}
 }
 
-void incrementTempsMin(void)
+static void incrementTempsMin(void)
 {
 	if (IntervalMinutes <= 29) //MAX 30minutes
 	{
@@ -673,15 +796,86 @@ void incrementTempsMin(void)
 	}
 }
 
-void decrementTempsMin(void)
+static void decrementTempsMin(void)
 {
 	if (IntervalMinutes != 0)
 	{
 		IntervalMinutes--;
 	}
+	if(IntervalMinutes == 0) // we are at 0minutes interval but we have to make sure we are not under 5s which is the minimum
+	{
+		if(IntervalSeconds < 1)
+		{
+			IntervalSeconds = 1;
+		}
+	}
 }
 
-void decrement100BFactor(void)
+static void incrementDurationHour(void)
+{
+	DurationHour++;
+}
+
+static void decrementDurationHour(void)
+{
+	if(DurationHour>0)
+	{
+		DurationHour--;
+	}
+	if(DurationHour == 0) //we make sure that the user doesn't enter 0s of test
+	{
+		if(DurationMin == 0)
+		{
+			DurationMin = 1;
+		}
+	}
+}
+static void incrementDurationMinute(void)
+{
+	DurationMin++;
+	if(DurationMin == 60)
+	{
+		DurationMin = 0; //60min => 1h
+		incrementDurationHour();
+	}
+}
+static void decrementDurationMinute(void)
+{
+	if(DurationMin > 0 || DurationHour > 0) //Check if hour is not 0 then we can decrement
+	{
+		DurationMin--;
+	}
+}
+
+static void incrementDurationSec(void)
+{
+	DurationSec++;
+	if(DurationSec == 60)
+	{
+		DurationSec = 0;
+		incrementDurationMinute();
+	}
+}
+
+static void decrementDurationSec(void)
+{
+	if(DurationSec > 0)
+	{
+		DurationSec--;
+	}
+}
+
+
+
+
+
+
+static void resetBFactorToDefault(void)
+{
+	B_FACTOR = 3977.0;
+}
+
+static void decrement100BFactor(void)
 {
 	if (B_FACTOR > 100)
 	{
@@ -689,12 +883,12 @@ void decrement100BFactor(void)
 	}
 }
 
-void increment100BFactor(void)
+static void increment100BFactor(void)
 {
 	B_FACTOR+=100;
 }
 
-void decrement10BFactor(void)
+static void decrement10BFactor(void)
 {
 	if (B_FACTOR > 10)
 	{
@@ -702,13 +896,13 @@ void decrement10BFactor(void)
 	}
 }
 
-void increment10BFactor(void)
+static void increment10BFactor(void)
 {
 	B_FACTOR+=10;
 }
 
 
-void decrement1BFactor(void)
+static void decrement1BFactor(void)
 {
 	if (B_FACTOR > 0)
 	{
@@ -716,12 +910,12 @@ void decrement1BFactor(void)
 	}
 }
 
-void increment1BFactor(void)
+static void increment1BFactor(void)
 {
 	B_FACTOR += 1;
 }
 
-void decrement10KR25(void)
+static void decrement10KR25(void)
 {
 	if(R_25 > 9999.0)
 	{
@@ -729,12 +923,12 @@ void decrement10KR25(void)
 	}
 }
 
-void increment10KR25(void)
+static void increment10KR25(void)
 {
 	R_25 += 10000.0;
 }
 
-void decrement1KR25(void)
+static void decrement1KR25(void)
 {
 	if(R_25 > 999.0)
 	{
@@ -742,18 +936,18 @@ void decrement1KR25(void)
 	}
 }
 
-void increment1KR25(void)
+static void increment1KR25(void)
 {
 	R_25 += 1000.0;
 }
 
-void resetR25ToDefault(void)
+static void resetR25ToDefault(void)
 {
 	R_25 = 10000.0;
 }
 
 
-void decrement1000Rshunt(void)
+static void decrement1000Rshunt(void)
 {
 	if(R_SHUNT >999)
 	{
@@ -761,12 +955,12 @@ void decrement1000Rshunt(void)
 	}
 }
 
-void increment1000Rshunt(void)
+static void increment1000Rshunt(void)
 {
 	R_SHUNT+=1000;
 }
 
-void decrement100Rshunt(void)
+static void decrement100Rshunt(void)
 {
 	if(R_SHUNT >99)
 	{
@@ -774,39 +968,59 @@ void decrement100Rshunt(void)
 	}
 }
 
-void increment100Rshunt(void)
+static void increment100Rshunt(void)
 {
 	R_SHUNT+=100;
 }
 
-void resetRshuntToDefault(void)
+static void resetRshuntToDefault(void)
 {
 	R_SHUNT = 2000;
 }
 
-void incrementTcType(void)
+static void incrementTcType(void)
 {
 	if(TC_Type_Counter <=7) //if we are not at the end of the array we can go forward
 	{
 		TC_Type_Counter++;
 	}
 	else{TC_Type_Counter = 0;} //return at the beginning
-	TC_Type = TC_Type_Array[TC_Type_Counter];
+	TC_Type[0] = TC_Type_Array[TC_Type_Counter];
 }
-void decrementTcType(void)
+static void decrementTcType(void)
 {
 	if(TC_Type_Counter > 0) //if we are not a the beginning we can go back
 	{
 		TC_Type_Counter--;
 	}
 	else{TC_Type_Counter = 7;}
-	TC_Type = TC_Type_Array[TC_Type_Counter];
+	TC_Type[0] = TC_Type_Array[TC_Type_Counter];
 }
 
 const char* getTCType(void) //Todo check if it works
 {
-	const char *t = &TC_Type; //Create a new char on the stack with the value pointed by TC_Type
+	const char* t= TC_Type; //Create a new char on the stack with the value pointed by TC_Type
 	return t;
+}
+
+void endMeasures(void)
+{
+	getElapsedTime();
+	gotoEndOfMeasuresScreen();
+}
+
+static void getElapsedTime(void)
+{
+	DateTime dt = RTC.now();
+	TimeSpan ts = dt - Global_Begin_Datetime;
+	ElapsedHours = ts.hours();
+	ElapsedMinutes = ts.minutes();
+	ElapsedSeconds = ts.seconds();
+}
+
+static void resetNumberOfMeasure(void)
+{
+	Nb_Of_Measure = 0;
 }
 
 

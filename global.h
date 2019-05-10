@@ -19,9 +19,9 @@
 
 //OBJECT
 extern INA_Class INA;
+extern LiquidCrystal lcd;
 extern RTC_DS3231 RTC;
 extern LiquidScreen* current_screen;//Used so we have to call get_currentScreen only once
-extern LiquidScreen* previous_screen;
 extern MAX31856 max_array[20];
 
 ////////MEASURE///////////
@@ -32,8 +32,12 @@ extern float V5_Measure_Array[MAX_V5_NB];
 extern int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current
 extern uint32_t IntervalMeasure;
 extern char TC_Type_Array[8];
-extern char TC_Type;
+extern char TC_Type[2];
 extern uint8_t TC_Type_Counter;
+extern uint32_t Nb_Of_Measure;
+extern DateTime Global_Begin_Datetime;
+extern DateTime Global_Current_DateTime;
+extern DateTime Global_End_Datetime;
 
 
 /////////EEPROM DATA///////////
@@ -47,6 +51,7 @@ extern float EEMEM NV_R_25;
 extern uint8_t EEMEM NV_IntervalSeconds;
 extern uint8_t EEMEM NV_IntervalMinutes;
 extern uint16_t EEMEM NV_R_SHUNT;
+extern uint8_t EEMEM NV_TC_Type;
 
 /////////NUMBER OF DEVICES ///////////
 extern uint8_t NTC_nb;
@@ -59,6 +64,16 @@ extern uint8_t V5_nb;
 /////////INTERVAL///////////
 extern uint8_t IntervalSeconds;
 extern uint8_t IntervalMinutes;
+
+/////////DURATION///////////
+extern uint8_t DurationHour;
+extern uint8_t DurationMin;
+extern uint8_t DurationSec;
+
+/////////TIME ELAPSED///////
+extern uint8_t ElapsedSeconds;
+extern uint8_t ElapsedMinutes;
+extern uint16_t ElapsedHours;
 
 //////////////LCD//////////////
 extern const uint8_t RS;

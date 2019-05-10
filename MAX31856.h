@@ -92,6 +92,7 @@ class MAX31856 {
   void setTempFaultThreshholds(float flow, float fhigh);
   void setColdJunctionFaultThreshholds(int8_t low, int8_t high);
   void setNoiseFilter(max31856_noise_filter_t noiseFilter);
+  void setAveraging(uint8_t n);
 
  private:
   MAX31856();
