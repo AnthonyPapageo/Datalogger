@@ -23,8 +23,6 @@ extern LiquidLine main_line0;
 extern LiquidLine main_line1;
 extern LiquidLine main_line2;
 extern LiquidLine main_line3;
-extern LiquidLine main_line4;
-extern LiquidLine main_line5;
 extern LiquidScreen main_Screen;
 
 /////////////Settings Screen////////////////////
@@ -65,7 +63,6 @@ extern LiquidLine Duration_line2;
 extern LiquidLine Duration_line3;
 extern LiquidLine Duration_line4;
 extern LiquidScreen Duration_Screen;
-
 
 
 //NTC
@@ -119,14 +116,15 @@ extern LiquidLine SavedToEEPROM_line0;
 extern LiquidLine SavedToEEPROM_line1;
 extern LiquidScreen SavedToEEPROM_Screen;
 
-//////////////INA///////////////
-extern uint32_t I1Value;
-extern uint32_t VBusValue;
-extern LiquidLine INA_line0;
-extern LiquidLine INA_line1;
-extern LiquidLine INA_line2;
-extern LiquidLine INA_line3;
-extern LiquidScreen INA_Screen;
+//Setup RTC
+extern LiquidLine Setup_RTC_line0;
+extern LiquidLine Setup_RTC_line1;
+extern LiquidLine Setup_RTC_line2;
+extern LiquidLine Setup_RTC_line3;
+extern LiquidLine Setup_RTC_line4;
+extern LiquidLine Setup_RTC_line5;
+extern LiquidLine Setup_RTC_line6;
+extern LiquidScreen Setup_RTC_Screen;
 
 
 //////////////LAUNCH///////////////
@@ -171,6 +169,7 @@ void gotoRshuntSelectionScreen(void);
 void gotoTcTypeSelectionScreen(void);
 void gotoSaveToEEPROMScreen(void);
 void gotoSavedToEEPROMScreen(void);
+void gotoSetupRTCScreen(void);
 void gotoINAScreen(void);
 void gotoLaunchScreen(void);
 void gotoMeasuringScreen(void);

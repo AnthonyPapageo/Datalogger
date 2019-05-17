@@ -15,6 +15,7 @@ void ADCinit(void)
 
 void ADCselectChannel(uint8_t channel)
 {
+	ADMUX &= 0xF8;//reset to channel 0 (clear last 3 bits)
 	if(channel <= 7)
 	{
 		ADMUX |= channel; // Set first 3 bits of mux
@@ -24,7 +25,7 @@ void ADCselectChannel(uint8_t channel)
 	}
 	else if (channel <= 14)
 	{
-		ADCSRB |=(1<<MUX5); //Set mux 5 bit
+		ADCSRB |=( 1<< MUX5); //Set mux 5 bit
 		ADMUX &= ~(1 << MUX3); //Clear Mux 4 and mux 3
 		ADMUX &= ~(1 << MUX4);// normally it's not needed
 		ADMUX |= (channel - 8); //Set MUX0,MUX1,MUX2
@@ -42,6 +43,7 @@ uint16_t ADCread(uint8_t channel)
 	ADCselectChannel(channel);
 	ADCstartConversion();
 	while((ADCSRA & (1 << ADIF)) == 0); //wait ADIF to be set to one
-	result = static_cast<float>(ADC);  //ADC is ADCH + ADCL
+	result = ADCL;
+	result |= (ADCH << 8); //ADLAR = 0
 	return result;
 }

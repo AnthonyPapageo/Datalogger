@@ -13,6 +13,12 @@
 #include "measure.h"
 
 
+#include "ADC.h"
+static void debugRTC(void);
+static void debugINA(void);
+static void debugADC(void);
+
+
 
 static void incrementNTC_nb(void);
 static void decrementNTC_nb(void);
@@ -60,6 +66,21 @@ static void incrementTcType(void);
 static void decrementTcType(void);
 const char* getTCType(void);
 
+//SETUP RTC
+static void incrementHour(void);
+static void decrementHour(void);
+static void incrementMinute(void);
+static void decrementMinute(void);
+static void incrementYear(void);
+static void decrementYear(void);
+static void incrementMonth(void);
+static void decrementMonth(void);
+static void incrementDay(void);
+static void decrementDay(void);
+static void setupRTC(void);
+
+
+
 /////////ELAPSED TIME///////
 static void getElapsedTime(void);
 static void resetNumberOfMeasure(void);
@@ -73,6 +94,11 @@ static void decrementDurationMinute(void);
 static void incrementDurationSec(void);
 static void decrementDurationSec(void);
 
+uint16_t year = 2019;
+uint8_t month = 1;
+uint8_t day = 1;
+uint8_t hour = 1;
+uint8_t minute = 1;
 
 
 /////////////STRINGS//////////////////////
@@ -90,17 +116,13 @@ LiquidScreen welcome_Screen(welcome_line0, welcome_line1, welcome_line2, welcome
 /////////////Main Screen////////////////////
 const char main_text0[] PROGMEM = "    MAIN MENU";
 const char main_text1[] PROGMEM = "1: SETTINGS";
-const char main_text2[] PROGMEM = "2: LIVE MEASURE";
+const char main_text2[] PROGMEM = "2: DEBUG";
 const char main_text3[] PROGMEM = "3: LAUNCH A TEST";
-const char main_text4[] PROGMEM = "4: ";
-const char main_text5[] PROGMEM = "5: ";
 LiquidLine main_line0(1,0,main_text0);
 LiquidLine main_line1(1,1,main_text1);
 LiquidLine main_line2(1,2,main_text2);
 LiquidLine main_line3(1,3,main_text3);
-LiquidLine main_line4(1,4,main_text4);
-LiquidLine main_line5(1,5,main_text5);
-LiquidScreen main_Screen(main_line0,main_line1,main_line2,main_line3, main_line4,main_line5);
+LiquidScreen main_Screen(main_line0,main_line1,main_line2,main_line3);
 
 
 /////////////Settings Screen////////////////////
@@ -110,8 +132,9 @@ const char Settings_text2[] PROGMEM = "2: TIME INTERVAL";
 const char Settings_text3[] PROGMEM = "3: NTC CONFIG";
 const char Settings_text4[] PROGMEM = "4: SHUNT VALUE";
 const char Settings_text5[] PROGMEM = "5: TC TYPE";
-const char Settings_text6[] PROGMEM = "6: SAVE CONFIG"; //Maybe plusieurs configuration
+const char Settings_text6[] PROGMEM = "6: SAVE CONFIG";
 const char Settings_text7[] PROGMEM = "7: RESET TO DEFAULT";
+const char Settings_text8[] PROGMEM = "8: SET TIME";
 LiquidLine Settings_line0(1,0,Settings_text0);
 LiquidLine Settings_line1(1,1,Settings_text1);
 LiquidLine Settings_line2(1,2,Settings_text2);
@@ -120,6 +143,7 @@ LiquidLine Settings_line4(1,4,Settings_text4);
 LiquidLine Settings_line5(1,5,Settings_text5);
 LiquidLine Settings_line6(1,6,Settings_text6);
 LiquidLine Settings_line7(1,7,Settings_text7);
+LiquidLine Settings_line8(1,8,Settings_text8);
 LiquidScreen Settings_Screen(Settings_line0,Settings_line1,Settings_line2,Settings_line3,Settings_line4,Settings_line5,Settings_line6);
 
 
@@ -247,19 +271,25 @@ LiquidLine SavedToEEPROM_line0(1,0,SavedToEEPROM_text0);
 LiquidLine SavedToEEPROM_line1(1,1,SavedToEEPROM_text1);
 LiquidScreen SavedToEEPROM_Screen(SavedToEEPROM_line0,SavedToEEPROM_line1);
 
+//Setup RTC
+const char Setup_RTC_text0[] PROGMEM = "Hour   :";
+const char Setup_RTC_text1[] PROGMEM = "minute :";
+const char Setup_RTC_text2[] PROGMEM = "day    :";
+const char Setup_RTC_text3[] PROGMEM = "month  :";
+const char Setup_RTC_text4[] PROGMEM = "year   :";
+const char Setup_RTC_text5[] PROGMEM = "OK";
+const char Setup_RTC_text6[] PROGMEM = "CANCEL";
+LiquidLine Setup_RTC_line0(1,0, Setup_RTC_text0, GLYPH::leftArrowIndex, hour, GLYPH::rightArrowIndex);
+LiquidLine Setup_RTC_line1(1,1, Setup_RTC_text1, GLYPH::leftArrowIndex, minute,GLYPH::rightArrowIndex);
+LiquidLine Setup_RTC_line2(1,2, Setup_RTC_text2, GLYPH::leftArrowIndex, day,GLYPH::rightArrowIndex);
+LiquidLine Setup_RTC_line3(1,3, Setup_RTC_text3, GLYPH::leftArrowIndex, month,GLYPH::rightArrowIndex);
+LiquidLine Setup_RTC_line4(1,4, Setup_RTC_text4, GLYPH::leftArrowIndex, year,GLYPH::rightArrowIndex);
+LiquidLine Setup_RTC_line5(1,5, Setup_RTC_text5);
+LiquidLine Setup_RTC_line6(1,6, Setup_RTC_text6);
+LiquidScreen Setup_RTC_Screen(Setup_RTC_line0,Setup_RTC_line1,Setup_RTC_line2,Setup_RTC_line3,Setup_RTC_line4,Setup_RTC_line5,Setup_RTC_line6);
 
-//////////////INA///////////////
-uint32_t I1Value = 0;
-uint32_t VBusValue = 0;
-const char INA_text0[] PROGMEM = "Current readings";
-const char INA_text1[] PROGMEM = "I2 : ";
-const char INA_text2[] PROGMEM = "I2 Bus :";
-const char INA_text3[] PROGMEM = "BACK";
-LiquidLine INA_line0 (1,0, INA_text0);
-LiquidLine INA_line1 (1,1, INA_text1, I1Value, "uA");
-LiquidLine INA_line2 (1,2, INA_text2, VBusValue, "mV");
-LiquidLine INA_line3 (1,3, INA_text3);
-LiquidScreen INA_Screen (INA_line0,INA_line1,INA_line2,INA_line3);
+
+
 
 ////////////LAUNCH////////////
 const char Launch_text0[] PROGMEM = "Is this setup OK ?";
@@ -287,7 +317,7 @@ LiquidScreen Measuring_Screen(Measuring_line0,Measuring_line1,Measuring_line2,Me
 
 //End of measures
 const char EndOfMeasures_text0[] PROGMEM = "Test finished !";
-const char EndOfMeasures_text1[] PROGMEM = "Nb of measures :";
+const char EndOfMeasures_text1[] PROGMEM = "Nb measures:";
 const char EndOfMeasures_text3[] PROGMEM = "OK ";
 LiquidLine EndOfMeasures_line0(1,0, EndOfMeasures_text0);
 LiquidLine EndOfMeasures_line1(1,1, EndOfMeasures_text1, Nb_Of_Measure);
@@ -299,6 +329,7 @@ LiquidScreen EndOfMeasures_Screen(EndOfMeasures_line0,EndOfMeasures_line1,EndOfM
 void AddVariableToLine(void)
 {
 	Settings_Screen.add_line(Settings_line7); //Reset to default line
+	Settings_Screen.add_line(Settings_line8); //Set time
 	Launch_line1.add_variable(" I="); // Show the setup
 	Launch_line1.add_variable( I_nb);
 	Launch_line3.add_variable("s");
@@ -351,6 +382,17 @@ void setGlyph(void)
 	
 	TcTypeSelection_line0.set_asGlyph(2);
 	TcTypeSelection_line0.set_asGlyph(4);
+	
+	Setup_RTC_line0.set_asGlyph(2);
+	Setup_RTC_line0.set_asGlyph(4);
+	Setup_RTC_line1.set_asGlyph(2);
+	Setup_RTC_line1.set_asGlyph(4);
+	Setup_RTC_line2.set_asGlyph(2);
+	Setup_RTC_line2.set_asGlyph(4);
+	Setup_RTC_line3.set_asGlyph(2);
+	Setup_RTC_line3.set_asGlyph(4);
+	Setup_RTC_line4.set_asGlyph(2);
+	Setup_RTC_line4.set_asGlyph(4);
 }
 
 void putInProgmem(void)
@@ -364,8 +406,6 @@ void putInProgmem(void)
 	main_line1.set_asProgmem(1);
 	main_line2.set_asProgmem(1);
 	main_line3.set_asProgmem(1);
-	main_line4.set_asProgmem(1);
-	main_line5.set_asProgmem(1);
 	
 	Settings_line0.set_asProgmem(1);
 	Settings_line1.set_asProgmem(1);
@@ -375,6 +415,7 @@ void putInProgmem(void)
 	Settings_line5.set_asProgmem(1);
 	Settings_line6.set_asProgmem(1);
 	Settings_line7.set_asProgmem(1);
+	Settings_line8.set_asProgmem(1);
 	
 	SettingsNumbeR_LINE_NTC0.set_asProgmem(1);
 	SettingsNumbeR_LINE_NTC1.set_asProgmem(1);
@@ -409,10 +450,13 @@ void putInProgmem(void)
 	SavedToEEPROM_line0.set_asProgmem(1);
 	SavedToEEPROM_line1.set_asProgmem(1);
 	
-	INA_line0.set_asProgmem(1);
-	INA_line1.set_asProgmem(1);
-	INA_line2.set_asProgmem(1);
-	INA_line3.set_asProgmem(1);
+	Setup_RTC_line0.set_asProgmem(1);
+	Setup_RTC_line1.set_asProgmem(1);
+	Setup_RTC_line2.set_asProgmem(1);
+	Setup_RTC_line3.set_asProgmem(1);
+	Setup_RTC_line4.set_asProgmem(1);
+	Setup_RTC_line5.set_asProgmem(1);
+	Setup_RTC_line6.set_asProgmem(1);
 	
 	Launch_line0.set_asProgmem(1);
 	Launch_line4.set_asProgmem(1);
@@ -443,7 +487,7 @@ void enableScrolling(void)
 	TcTypeSelection_Screen.set_displayLineCount(LCD_ROWS);
 	SaveToEEPROM_Screen.set_displayLineCount(LCD_ROWS);
 	SavedToEEPROM_Screen.set_displayLineCount(LCD_ROWS);
-	INA_Screen.set_displayLineCount(LCD_ROWS);
+	Setup_RTC_Screen.set_displayLineCount(LCD_ROWS);
 	Launch_Screen.set_displayLineCount(LCD_ROWS);
 	Measuring_Screen.set_displayLineCount(LCD_ROWS);
 	EndOfMeasures_Screen.set_displayLineCount(LCD_ROWS);
@@ -457,11 +501,8 @@ void attachFunctionToLine(void)
 	welcome_line3.attach_function(1, gotoMainScreen);
 	
 	main_line1.attach_function(1, gotoSettingsScreen); //Start the settings screen
-	main_line2.attach_function(1, emptyfunction); //Live readings
+	main_line2.attach_function(1, debugADC); //Debug
 	main_line3.attach_function(1, gotoLaunchScreen); //Launch test
-	main_line4.attach_function(1, gotoINAScreen);
-	main_line5.attach_function(1, gotoLaunchScreen);
-	
 
 	Settings_line0.attach_function(1, gotoMainScreen);
 	Settings_line1.attach_function(1, gotoSettingsNumberScreen);
@@ -471,6 +512,7 @@ void attachFunctionToLine(void)
 	Settings_line5.attach_function(1, gotoTcTypeSelectionScreen);
 	Settings_line6.attach_function(1, gotoSaveToEEPROMScreen);
 	Settings_line7.attach_function(1, resetToDefault);
+	Settings_line8.attach_function(1, gotoSetupRTCScreen);
 	
 	SettingsNumbeR_LINE_NTC0.attach_function(6, decrementNTC_nb); //left we decrement, right we increment
 	SettingsNumbeR_LINE_NTC0.attach_function(7, incrementNTC_nb);
@@ -533,15 +575,22 @@ void attachFunctionToLine(void)
 	SavedToEEPROM_line0.attach_function(1, gotoSettingsScreen);
 	SavedToEEPROM_line1.attach_function(1, gotoSettingsScreen);
 	
-	INA_line0.attach_function(1, emptyfunction);
-	INA_line1.attach_function(1, emptyfunction);
-	INA_line2.attach_function(1, emptyfunction);
-	INA_line3.attach_function(1, gotoMainScreen);//return to main menu
-	
+	Setup_RTC_line0.attach_function(6, decrementHour );
+	Setup_RTC_line0.attach_function(7, incrementHour );
+	Setup_RTC_line1.attach_function(6, decrementMinute );
+	Setup_RTC_line1.attach_function(7, incrementMinute );
+	Setup_RTC_line2.attach_function(6, decrementDay );
+	Setup_RTC_line2.attach_function(7, incrementDay );
+	Setup_RTC_line3.attach_function(6, decrementMonth );
+	Setup_RTC_line3.attach_function(7, incrementMonth );
+	Setup_RTC_line4.attach_function(6, decrementYear);
+	Setup_RTC_line4.attach_function(7, incrementYear);
+	Setup_RTC_line5.attach_function(1, setupRTC);
+	Setup_RTC_line5.attach_function(2, gotoSettingsScreen);
+	Setup_RTC_line6.attach_function(1, gotoSettingsScreen );
+		
 	//todo change first line
 	Launch_line1.attach_function(1,emptyfunction);
-	/*Launch_line2.attach_function(1,emptyfunction);
-	Launch_line3.attach_function(1,emptyfunction);*/
 	Launch_line4.attach_function(1, initSensors);
 	Launch_line4.attach_function(2, gotoDurationScreen);
 	Launch_line5.attach_function(1, gotoMainScreen);
@@ -554,13 +603,89 @@ void attachFunctionToLine(void)
 	Duration_line3.attach_function(6, decrementDurationSec);
 	Duration_line3.attach_function(7, incrementDurationSec);
 	Duration_line4.attach_function(1, firstLineSD);
-	Duration_line4.attach_function(2, gotoMeasuringScreen);//Launch the measures
+	Duration_line4.attach_function(2, initInterruptTimer);//Launch the measures,
+	Duration_line4.attach_function(3, gotoMeasuringScreen);//Launch the measures
 	
 	Measuring_line3.attach_function(1, endMeasures);
 	
 	EndOfMeasures_line3.attach_function(1,resetNumberOfMeasure );
 	EndOfMeasures_line3.attach_function(2,gotoMainScreen );
 }
+
+static void debugRTC(void)
+{
+	DateTime dt;
+	while(1)
+	{
+		lcd.clear();
+		lcd.home();
+		dt = RTC.now();
+		lcd.print(dt.hour());
+		lcd.print(":");
+		lcd.print(dt.minute());
+		lcd.print(":");
+		lcd.print(dt.second());
+		lcd.setCursor(0,2);
+		lcd.print(dt.day());
+		lcd.print(":");
+		lcd.print(dt.month());
+		lcd.print(":");
+		lcd.print(dt.year());
+		_delay_ms(500);
+	}
+}
+
+static void debugINA(void)
+{
+	INA.setI2CSpeed(I2C_SPEED);
+	INA.begin(3, DEFAULT_R_SHUNT ,1); //Init INA device for I1a or I1b with Shunt from user
+	INA.setBusConversion(8500); // Maximum conversion time 8.244ms
+	INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
+	INA.setAveraging(128); //Average 128 readings
+	INA.setMode(INA_MODE_CONTINUOUS_BOTH);
+	while(1)
+	{
+		lcd.clear();
+		lcd.home();
+		lcd.print(INA.getBusMilliVolts());
+		lcd.print("mV");
+		lcd.setCursor(0,1);
+		lcd.print(INA.getBusMicroAmps());
+		lcd.print("uA");
+		_delay_ms(500);
+		
+	}
+}
+
+static void debugADC(void)
+{
+	uint8_t i;
+	ADMUX |= (1<<REFS0); //AVCC ref
+	while(1)
+	{
+		lcd.clear();
+		lcd.home();
+		for(i=0; i<4;i++)
+		{
+			lcd.setCursor(0,i);
+			lcd.print(ADCread(i+4));
+			_delay_ms(200);
+		}
+	}
+}
+
+static void debugMAX(void)
+{
+	while(1)
+	{
+		lcd.clear();
+		lcd.home();
+		
+	}
+}
+
+
+
 
 void addScreens(void)
 {
@@ -577,7 +702,7 @@ void addScreens(void)
 	menu.add_screen(TcTypeSelection_Screen);
 	menu.add_screen(SaveToEEPROM_Screen);
 	menu.add_screen(SavedToEEPROM_Screen);
-	menu.add_screen(INA_Screen);
+	menu.add_screen(Setup_RTC_Screen);
 	menu.add_screen(Launch_Screen);
 	menu.add_screen(Measuring_Screen);
 	menu.add_screen(EndOfMeasures_Screen);
@@ -657,10 +782,16 @@ void gotoSavedToEEPROMScreen(void)
 	menu.switch_focus(true);
 }
 
-void gotoINAScreen(void)
+void gotoSetupRTCScreen(void)
 {
-	menu.change_screen(INA_Screen);
+	DateTime dt = RTC.now();
+	menu.change_screen(Setup_RTC_Screen);
 	menu.switch_focus(true);
+	year = dt.year();
+	month = dt.month();
+	day = dt.day();
+	hour = dt.hour();
+	minute = dt.minute();
 }
 
 void gotoLaunchScreen(void) //check if we can save things
@@ -674,7 +805,7 @@ void gotoLaunchScreen(void) //check if we can save things
 		lcd.print(F("NOT FOUND"));
 		lcd.setCursor(0,2);
 		lcd.print(F("Insert an SD card"));
-		_delay_ms(500); //weird bug with delay here so using the avr one
+		_delay_ms(500); //weird bug with delay() here so using the avr one
 	}
 	menu.change_screen(Launch_Screen);
 	menu.switch_focus(true);
@@ -866,10 +997,6 @@ static void decrementDurationSec(void)
 }
 
 
-
-
-
-
 static void resetBFactorToDefault(void)
 {
 	B_FACTOR = 3977.0;
@@ -973,6 +1100,88 @@ static void increment100Rshunt(void)
 	R_SHUNT+=100;
 }
 
+static void incrementHour(void)
+{
+	if(hour <24)
+	{
+		hour++;
+	}
+}
+static void decrementHour(void)
+{
+	if(hour > 0)	
+	{
+		hour--;
+	}
+}
+static void incrementMinute(void)
+{
+	if(minute<60)
+	{
+		minute++;
+	}
+}
+
+static void decrementMinute(void)
+{
+	if(minute>0)
+	{
+		minute--;
+	}
+}
+
+static void incrementYear(void)
+{
+	year++;
+}
+
+static void decrementYear(void)
+{
+	if(year>1970)
+	{
+		year--;
+	}
+}
+
+static void incrementMonth(void)
+{
+	if(month<12)
+	{
+		month++;
+	}
+}
+static void decrementMonth(void)
+{
+	if(month >0)
+	{
+		month--;
+	}
+}
+
+static void incrementDay(void)
+{
+	if(day<31) // we don't check for the month, the user has to not be stupid
+	{
+		day++;
+	}
+}
+
+static void decrementDay(void)
+{
+	if(day > 0)
+	{
+		day--;
+	}
+}
+
+static void setupRTC(void)
+{
+	DateTime dt(year,month,day,hour,minute,0);
+	RTC.adjust(dt); //send new time to RTC
+}
+
+
+
 static void resetRshuntToDefault(void)
 {
 	R_SHUNT = 2000;
@@ -980,7 +1189,7 @@ static void resetRshuntToDefault(void)
 
 static void incrementTcType(void)
 {
-	if(TC_Type_Counter <=7) //if we are not at the end of the array we can go forward
+	if(TC_Type_Counter <7) //if we are not at the end of the array we can go forward
 	{
 		TC_Type_Counter++;
 	}
@@ -1006,6 +1215,8 @@ const char* getTCType(void) //Todo check if it works
 void endMeasures(void)
 {
 	getElapsedTime();
+	Global_Current_DateTime = Global_End_Datetime; //it's the end we don't need to update
+	stopTimer();
 	gotoEndOfMeasuresScreen();
 }
 

@@ -5,6 +5,7 @@
 
 #include <avr/io.h>
 #include <avr/eeprom.h>
+#include <avr/wdt.h>
 #include <util/delay.h>
 #include <string.h>
 #include <SD.h>
@@ -13,6 +14,19 @@
 #include "global.h"
 #include "menu.h"
 #include "measure.h"
+
+
+#define soft_reset()        \
+do                          \
+{                           \
+	wdt_enable(WDTO_15MS);  \
+	for(;;)                 \
+	{                       \
+	}                       \
+} while(0)
+
+
+
 
 String FileName = "default.csv";
 
@@ -137,7 +151,8 @@ bool IsSdInserted(void) //TODO CHANGE FOR FINAL
 
 void saveToEEPROM(void)
 {
-	cli();
+	cli();//disable interrupt
+	eeprom_busy_wait(); //wait until EEPROM is ready
 	eeprom_update_byte(&NV_NTC_nb, NTC_nb);
 	eeprom_update_byte(&NV_TC_nb, TC_nb);
 	eeprom_update_byte(&NV_I_nb, I_nb);
@@ -147,14 +162,15 @@ void saveToEEPROM(void)
 	eeprom_update_float(&NV_B_FACTOR, B_FACTOR);	
 	eeprom_update_byte(&NV_IntervalSeconds, IntervalSeconds);
 	eeprom_update_byte(&NV_IntervalMinutes, IntervalMinutes);
-	eeprom_update_word(&NV_R_SHUNT, R_SHUNT);
+	eeprom_update_dword(&NV_R_SHUNT, R_SHUNT);
 	//eeprom_update_byte(&NV_TC_Type, static_cast<uint8_t>(TC_Type[0])); //because eeprom function use uint8_t
-	sei();
+	sei();//enable interrupt
 }
 
 void LoadFromEEPROM(void)
 {
-	cli(); //TODO RETIRER needed or we can read corrupted data
+	cli(); //disable interrupt
+	eeprom_busy_wait();
 	NTC_nb = eeprom_read_byte(&NV_NTC_nb);
 	TC_nb = eeprom_read_byte(&NV_TC_nb);
 	I_nb = eeprom_read_byte(&NV_I_nb);
@@ -164,25 +180,26 @@ void LoadFromEEPROM(void)
 	B_FACTOR = eeprom_read_float(&NV_B_FACTOR);
 	IntervalSeconds = eeprom_read_byte(&NV_IntervalSeconds);
 	IntervalMinutes = eeprom_read_byte(&NV_IntervalMinutes);
-	R_SHUNT = eeprom_read_word(&NV_R_SHUNT);
-	//TC_Type[0] = static_cast<char>(eeprom_read_byte(&NV_TC_Type));	//because EEPROM function return uint8
-	if((NTC_nb > MAX_NTC_NB) ||( TC_nb > MAX_TC_NB) || (I_nb> MAX_I_NB) || (V5_nb > MAX_V5_NB) || (V24_nb > MAX_V24_NB)) //sketchy workaround TODO get it better
+	R_SHUNT = eeprom_read_dword(&NV_R_SHUNT);
+	//TC_Type[0] = static_cast<char>(eeprom_read_byte(&NV_TC_Type));	
+	if((NTC_nb > MAX_NTC_NB) ||( TC_nb > MAX_TC_NB) || (I_nb> MAX_I_NB) || (V5_nb > MAX_V5_NB) || (V24_nb > MAX_V24_NB) 
+	|| (IntervalMinutes >30) || (IntervalSeconds>60)) 
 	{
 		correctEEPROM();
 	} //Check if the EEPROM is not full of 1, if it is, correct to the default value
-	sei();
+	sei(); //enable interrupt
 }
 
-static void correctEEPROM(void) //This function is here because if Float are NaN the inc and decrement function won't work and without it you have to clear the EEPROM
+static void correctEEPROM(void) 
 {
 	if(NTC_nb > MAX_NTC_NB){NTC_nb = 0;}
 	if(TC_nb > MAX_TC_NB){TC_nb = 0 ; }
 	if(I_nb > MAX_I_NB){I_nb = 0; }
 	if(V24_nb > MAX_V24_NB){V24_nb = 0; }
 	if(V5_nb > MAX_V5_NB){V5_nb = 0; }
-	if(R_SHUNT == 65535){R_SHUNT = 2000.0; }
+	if(R_SHUNT == 65535){R_SHUNT = DEFAULT_R_SHUNT; }
 	
-	if(isnan(R_25))
+	if(isnan(R_25)) //check if the value is a NaN
 	{
 		R_25 = 10000.0;
 	}
@@ -190,7 +207,9 @@ static void correctEEPROM(void) //This function is here because if Float are NaN
 	{
 		B_FACTOR = 3977.0;
 	}
-	saveToEEPROM();
+	IntervalMinutes = 0;
+	IntervalSeconds = 1;
+	saveToEEPROM(); //Save the new value 
 }
 
 void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbutton& up,Pushbutton& right, Pushbutton& Ok)
@@ -245,6 +264,28 @@ void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbut
 	current_screen = menu.get_currentScreen();//update variable
 }
 
+void initInterruptTimer(void)
+{
+	// set up Timer 1
+	cli();
+	TCCR1A = 0;          // normal operation
+	TCCR1B = bit(WGM12) | bit(CS10) | bit (CS12);   // CTC, scale to clock / 1024
+	OCR1A =  15625;       // compare A register value (1000 * clock speed / 1024), 1s
+	TIMSK1 = bit (OCIE1A);             // interrupt on Compare A Match
+	Global_test_launched = true;
+	sei();
+}
+
+void stopTimer(void)
+{
+	TCCR1B &= ~(1<<CS12);
+	TCCR1B &= ~(1<<CS11);
+	TCCR1B &= ~(1<<CS10); //select no clock source
+	TIMSK1 &= ~(OCIE1A); //disable interrupt
+}
+
+
+
 
 void resetToDefault(void)
 {
@@ -292,40 +333,57 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	led_SD(true);//Assert that we are writing to the SD card
 	
-	dataFile.print("N°;");	
+	if(dataFile)
+	{
+		
+		dataFile.print("N°;");
+		for(i = 0; i<TC_nb;i++)
+		{
+			temp = "TC" + String(i+1) +";";
+			dataFile.print(temp);
+		}
+		for(i=0; i<NTC_nb;i++)
+		{
+			temp = "NTC" + String(i+1) +";";
+			dataFile.print(temp);
+		}
+		for(i=0;i<V24_nb;i++)
+		{
+			temp = "V" + String(i+1) +";";
+			dataFile.print(temp);
+		}
+		for(i=0;i<V5_nb;i++)
+		{
+			temp = "V" + String(i+3) +";"; //V5 begin at V3
+			dataFile.print(temp);
+		}
+		for(i=0;i<I_nb;i++)
+		{
+			temp = "I" + String(i+1) +";"; //I
+			dataFile.print(temp);
+		}
+		temp = "Date;";
+		dataFile.print(temp);
+		
+		temp = "Time;"; //last column
+		dataFile.print(temp);
+		
+		dataFile.close();
+	}
 	
-	for(i = 0; i<TC_nb;i++)
+	/*else //uncomment on final product
 	{
-		temp = "TC" + String(i+1) +";";
-		dataFile.print(temp);
-	}
-	for(i=0; i<NTC_nb;i++)
-	{
-		temp = "NTC" + String(i+1) +";";
-		dataFile.print(temp);
-	}
-	for(i=0;i<V24_nb;i++)
-	{
-		temp = "V" + String(i+1) +";";
-		dataFile.print(temp);
-	}
-	for(i=0;i<V5_nb;i++)
-	{
-		temp = "V" + String(i+3) +";"; //V5 begin at V3
-		dataFile.print(temp);
-	}
-	for(i=0;i<I_nb;i++)
-	{
-		temp = "I" + String(i+1) +";"; //I
-		dataFile.print(temp);
-	}
-	temp = "Date;";
-	dataFile.print(temp);
-		
-	temp = "Time;"; //last column
-	dataFile.print(temp);
-		
-	dataFile.close();
+		lcd.clear();
+		lcd.home();
+		lcd.print("ERROR");
+		lcd.setCursor(0,1);
+		lcd.print("SD CARD UNREADABLE");
+		lcd.setCursor(0,2);
+		lcd.print("RESET IN 5sec");
+		_delay_ms(5000);
+		soft_reset();
+	}*/
+	
 	led_SD(false);
 }
 

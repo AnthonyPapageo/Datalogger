@@ -195,14 +195,14 @@ float MAX31856::readThermocoupleTemperature(void) {
 
 void MAX31856::setAveraging(uint8_t n)
 {
-	uint8_t t;
-	switch(n) //Avoid using SQRT
+	volatile uint8_t t;
+	switch(n) //Avoid using log2
 	{
 		case 1: 
-			n =0 ;
+			n = 0 ;
 			break;
 		case 2:
-			n =1;
+			n = 1;
 			break;
 		case 4:
 			n = 2;
@@ -219,7 +219,7 @@ void MAX31856::setAveraging(uint8_t n)
 	}
 	t = readRegister8(MAX31856_CR1_REG);
 	t &= 0x8f; //clear bit 4 to 6
-	t |=(n>>4); //Write the bit 4 to 6
+	t |=(n<<4); //Write the bit 4 to 6
 	writeRegister8(MAX31856_CR1_REG, t);
 	
 }

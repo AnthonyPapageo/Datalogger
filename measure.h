@@ -11,7 +11,6 @@
 void initSensors(void);
 void computeTime(void);
 void getAllMeasures(void);
-void getTCMeasures(void);
 void getNTCMeasures(void);
 void getV24Measures(void);
 void getV5Measures(void);

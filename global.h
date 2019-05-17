@@ -38,7 +38,7 @@ extern uint32_t Nb_Of_Measure;
 extern DateTime Global_Begin_Datetime;
 extern DateTime Global_Current_DateTime;
 extern DateTime Global_End_Datetime;
-
+extern bool Global_test_launched;
 
 /////////EEPROM DATA///////////
 extern uint8_t EEMEM NV_NTC_nb;
@@ -50,9 +50,7 @@ extern float EEMEM  NV_B_FACTOR;
 extern float EEMEM NV_R_25;
 extern uint8_t EEMEM NV_IntervalSeconds;
 extern uint8_t EEMEM NV_IntervalMinutes;
-extern uint16_t EEMEM NV_R_SHUNT;
-extern uint8_t EEMEM NV_TC_Type;
-
+extern uint32_t EEMEM NV_R_SHUNT;
 /////////NUMBER OF DEVICES ///////////
 extern uint8_t NTC_nb;
 extern uint8_t TC_nb;
@@ -131,7 +129,7 @@ extern const float R_DOWN;
 
 
 //////////////CURRENT SENSING//////////////
-extern uint16_t R_SHUNT;
+extern uint32_t R_SHUNT;
 extern const uint16_t DEFAULT_R_SHUNT;
 
 

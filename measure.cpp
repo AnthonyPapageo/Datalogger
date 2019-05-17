@@ -23,24 +23,24 @@ void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 	{
 		INA.setI2CSpeed(I2C_SPEED);
 		INA.begin(3, R_SHUNT,1); //Init INA device for I1a or I1b with Shunt from user
-		if(I_nb ==2)
+		if(I_nb == 2 )
 		{
-			INA.begin(3, DEFAULT_R_SHUNT,2); //I2 device has a fixed shunt, If I_nb ==2, I2 is used
+			INA.begin(3, DEFAULT_R_SHUNT,2); //I2 device has a fixed shunt, If I_nb == 2, I2 is used
 		}
 		INA.setBusConversion(8500); // Maximum conversion time 8.244ms
 		INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
 		INA.setAveraging(128); //Average 128 readings
-		INA.setMode(INA_MODE_CONTINUOUS_BOTH);
+		INA.setMode(INA_MODE_CONTINUOUS_BOTH); //Continous conversion
 	}
 	
 	for (i = 0; i<TC_nb; i++) //filter 50Hz
 	{
 		max_array[i].begin();
 		max_array[i].oneShotTemperature(); //dummy conversion for init
-		max_array[i].setAveraging(4); //Average 4 mesure
+		max_array[i].setAveraging(4); //Average 4 measures
 	}
 	
-	if(TC_Type[0] != 'T') //By default it's T type so we don't need to change the type
+	if(TC_Type[0] != 'T') //By default it's T, so we have to change for another type
 	{
 		if (TC_Type[0] == 'K')
 		{
@@ -79,7 +79,7 @@ void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 		}
 		else if(TC_Type[0] == 'B')
 		{
-			for (i = 0; i<TC_nb; i++) //Setup
+			for (i = 0; i<TC_nb; i++)
 			{
 				max_array[i].setThermocoupleType(MAX31856_TCTYPE_B);
 			}
@@ -93,15 +93,14 @@ void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 		}
 	}//end if
 			
-	R_INF = R_25*exp((-1*B_FACTOR)/298.15); //compute the term once so we avoid computing it everytime
+	R_INF = R_25*exp((-1.0*B_FACTOR)/298.15); //compute the term once so we avoid computing it everytime
 	
 }
 
 void computeTime(void)
 {
 	uint32_t TimeInSeconds;
-	IntervalMeasure = (60 * IntervalMinutes) + IntervalSeconds;
-	IntervalMeasure *= 1000; //transform in milliseconds
+	IntervalMeasure = (60 * IntervalMinutes) + IntervalSeconds; //nb of seconds for interval
 	Global_Begin_Datetime = RTC.now();
 	TimeInSeconds = (DurationHour*3600) + (DurationMin * 60) + DurationSec;
 	Global_End_Datetime = Global_Begin_Datetime + TimeSpan(TimeInSeconds);
@@ -114,7 +113,7 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 	uint32_t temp;
 	PORTA ^= (1<<1);//todo retiré led
 	
-	temp = millis();
+	temp = millis(); //
 	for (i = 0; i<TC_nb; i++)
 	{
 		max_array[i].oneShotTemperature(); //Tell each MAX to begin a conversion
@@ -123,32 +122,22 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 	getV24Measures();
 	getV5Measures();
 	getIMeasures();
-	while(millis() < temp + 500); //we the other measures didn't take more than 500ms, we wait here
-	for (i = 0; i<TC_nb; i++)
+	if(TC_nb > 0)//if we are taking TC measure, we have to wait
 	{
-		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature(); //read the temperature for each max
+		while(millis() < temp + 500); //the other measures didn't take more than 500ms, we wait here
+	}
+	for (i = 0; i<TC_nb; i++) 
+	{
+		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature(); //read the temperature for each MAX
 	}
 	
-	Nb_Of_Measure++;
-	if(Nb_Of_Measure == 65534) //max number of line for excel -1 (first line is header)
+	Nb_Of_Measure++;//increment counter of number of measure
+	if(Nb_Of_Measure == 65534) //max number of line for excel -1, file is full so we create a new file
 	{
-		setFileName();
-		Nb_Of_Measure = 0;
+		firstLineSD(); //get new filename and create a new file
+		Nb_Of_Measure = 0; //reset counter
 	}
 	PORTA ^= (1<<1);
-}
-
-void getTCMeasures(void)
-{
-	uint8_t i;
-	for (i = 0; i<TC_nb; i++)
-	{
-		max_array[i].oneShotTemperature(); //Tell each MAX to begin a conversion
-	}
-	for (i = 0; i<TC_nb; i++)
-	{
-		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature(); //read the temperature for each max
-	}
 }
 
 void getNTCMeasures(void)
@@ -159,7 +148,7 @@ void getNTCMeasures(void)
 	{
 		NTC_Measure_Array[i] = static_cast<float>(ADCread(NTCChannel[i])); //value from 0-1023 = ADC register
 		NTC_Measure_Array[i] = ( NTC_Measure_Array[i]*V_SUPPLY) / 1024.0; //now the array contain the voltage from 0 to 5V
-		res = ((R_LINE_NTC * NTC_Measure_Array[i]) / V_SUPPLY - NTC_Measure_Array[i]); //With the voltage we can compute the R value
+		res = ((R_LINE_NTC * NTC_Measure_Array[i]) / (V_SUPPLY - NTC_Measure_Array[i])); //With the voltage we can compute the R value
 		NTC_Measure_Array[i] = B_FACTOR / log(res/R_INF); //Steinhart Equation
 	}
 }
@@ -170,8 +159,8 @@ void getV24Measures(void)
 	for (i = 0; i< V24_nb;i++)
 	{
 		V24_Measure_Array[i] = static_cast<float>(ADCread(V24Channel[i])); ///value from 0-1023 = ADC register
-		V24_Measure_Array[i] = (V24_Measure_Array[i] * V_SUPPLY) / 1024.0; //Voltage before bridge
-		V24_Measure_Array[i] = V24_Measure_Array[i] * ((R_UP+R_DOWN)/R_UP); //Compute pre divided voltage
+		V24_Measure_Array[i] = (V24_Measure_Array[i] * V_SUPPLY) / 1024.0; //Voltage after bridge
+		V24_Measure_Array[i] = V24_Measure_Array[i] * ((R_UP+R_DOWN)/R_DOWN); //Compute pre divided voltage
 	}
 }
 void getV5Measures(void)
@@ -180,7 +169,7 @@ void getV5Measures(void)
 	for (i = 0; i < V5_nb; i++)
 	{
 		V5_Measure_Array[i] = static_cast<float>(ADCread(V5Channel[i])); //value from 0-1023 = ADC register
-		V5_Measure_Array[i] = (V5_Measure_Array[i]*V_SUPPLY) / 1024.0; //
+		V5_Measure_Array[i] = (V5_Measure_Array[i]*V_SUPPLY) / 1024.0; //Voltage
 	}
 }
 

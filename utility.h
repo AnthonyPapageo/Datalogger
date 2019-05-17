@@ -14,6 +14,8 @@ bool IsSdInserted(void);
 void saveToEEPROM(void);
 void LoadFromEEPROM(void);
 void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbutton& up,Pushbutton& right, Pushbutton& Ok);
+void initInterruptTimer(void);
+void stopTimer(void);
 void resetToDefault(void);
 void setFileName(void);
 void firstLineSD(void);

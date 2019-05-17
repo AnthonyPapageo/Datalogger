@@ -17,14 +17,15 @@ float NTC_Measure_Array[MAX_NTC_NB];
 float V24_Measure_Array[MAX_V24_NB];
 float V5_Measure_Array[MAX_V5_NB];
 int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current TODO CAST getbusmillivolts in INT32
-uint32_t IntervalMeasure = 5;
+uint32_t IntervalMeasure = 1;
 char TC_Type_Array[8] = {'T','K','J','N','R','S','B','E'};
-char TC_Type[2] = {'T',0}; // 0 = \0 so it stops printing, thanks Arnaud !
+char TC_Type[2] = {'T',0}; // 0 = '\0' so it stops printing, thanks Arnaud !
 uint8_t TC_Type_Counter = 0;
 uint32_t Nb_Of_Measure = 0;
 DateTime Global_Begin_Datetime;
 DateTime Global_Current_DateTime;
 DateTime Global_End_Datetime;
+bool Global_test_launched = false;
 
 /////////EEPROM DATA///////////
 uint8_t EEMEM NV_NTC_nb = 0;
@@ -36,8 +37,7 @@ float EEMEM NV_B_FACTOR = 3977.0;
 float EEMEM NV_R_25 = 10000.0;
 uint8_t EEMEM NV_IntervalSeconds = 5;
 uint8_t EEMEM NV_IntervalMinutes = 0;
-uint16_t EEMEM NV_R_SHUNT = 2000;
-uint8_t EEMEM NV_TC_Type = uint8_t('T'); //cast back after 
+uint32_t EEMEM NV_R_SHUNT = 2000;
 
 
 /////////NUMBER OF DEVICES ///////////
@@ -48,7 +48,7 @@ uint8_t V24_nb = 0;
 uint8_t V5_nb = 0;
 
 /////////INTERVAL///////////
-uint8_t IntervalSeconds = 5;
+uint8_t IntervalSeconds = 1;
 uint8_t IntervalMinutes = 0;
 
 /////////DURATION///////////
@@ -127,7 +127,7 @@ float const R_UP = 39000.0;
 float const R_DOWN = 10000.0;
 
 //////////////CURRENT SENSING//////////////
-uint16_t R_SHUNT = 2000;
+uint32_t R_SHUNT = 2000;
 const uint16_t DEFAULT_R_SHUNT = 2000;
 
 
