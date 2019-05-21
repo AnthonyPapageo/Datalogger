@@ -7,6 +7,7 @@
 
 #include <LiquidMenu.h>
 #include <util/delay.h>
+#include <SD.h>
 #include "global.h"
 #include "utility.h"
 #include "menu.h"
@@ -17,6 +18,7 @@
 static void debugRTC(void);
 static void debugINA(void);
 static void debugADC(void);
+static void debugSD(void);
 
 
 
@@ -105,7 +107,7 @@ uint8_t minute = 1;
 /////////////Welcome Screen////////////////////
 const char welcome_text0[] PROGMEM = "DATALOGGER TAS-B";
 const char welcome_text1[] PROGMEM = "TC AND NTC MEASURES";
-const char welcome_text2[] PROGMEM = "Build on :";
+const char welcome_text2[] PROGMEM = "PRESS OK";
 const char welcome_text3[] PROGMEM =  __TIME__;
 LiquidLine welcome_line0(1,0,welcome_text0);
 LiquidLine welcome_line1(1,1,welcome_text1);
@@ -317,10 +319,10 @@ LiquidScreen Measuring_Screen(Measuring_line0,Measuring_line1,Measuring_line2,Me
 
 //End of measures
 const char EndOfMeasures_text0[] PROGMEM = "Test finished !";
-const char EndOfMeasures_text1[] PROGMEM = "Nb measures:";
+const char EndOfMeasures_text1[] PROGMEM = " measures";
 const char EndOfMeasures_text3[] PROGMEM = "OK ";
 LiquidLine EndOfMeasures_line0(1,0, EndOfMeasures_text0);
-LiquidLine EndOfMeasures_line1(1,1, EndOfMeasures_text1, Nb_Of_Measure);
+LiquidLine EndOfMeasures_line1(1,1,Nb_Of_Measure, EndOfMeasures_text1);
 LiquidLine EndOfMeasures_line2(1,2, "Time :", ElapsedHours, "h ", ElapsedMinutes);
 LiquidLine EndOfMeasures_line3(1,3, EndOfMeasures_text3);
 LiquidScreen EndOfMeasures_Screen(EndOfMeasures_line0,EndOfMeasures_line1,EndOfMeasures_line2,EndOfMeasures_line3);
@@ -467,7 +469,7 @@ void putInProgmem(void)
 	Measuring_line3.set_asProgmem(1);
 	
 	EndOfMeasures_line0.set_asProgmem(1);
-	EndOfMeasures_line1.set_asProgmem(1);
+	EndOfMeasures_line1.set_asProgmem(2);
 	//EndOfMeasures_line2.set_asProgmem(1);
 	EndOfMeasures_line3.set_asProgmem(1);
 }
@@ -501,7 +503,7 @@ void attachFunctionToLine(void)
 	welcome_line3.attach_function(1, gotoMainScreen);
 	
 	main_line1.attach_function(1, gotoSettingsScreen); //Start the settings screen
-	main_line2.attach_function(1, debugADC); //Debug
+	main_line2.attach_function(1, debugSD); //Debug
 	main_line3.attach_function(1, gotoLaunchScreen); //Launch test
 
 	Settings_line0.attach_function(1, gotoMainScreen);
@@ -568,8 +570,8 @@ void attachFunctionToLine(void)
 	SettingsInterval_line2.attach_function(7, incrementTempsMin);
 	SettingsInterval_line3.attach_function(1, gotoSettingsScreen);
 
-	SaveToEEPROM_line2.attach_function(1, gotoSavedToEEPROMScreen);
-	SaveToEEPROM_line2.attach_function(2 ,saveToEEPROM);
+	SaveToEEPROM_line2.attach_function(1,saveToEEPROM );
+	SaveToEEPROM_line2.attach_function(2,gotoSavedToEEPROMScreen);
 	SaveToEEPROM_line3.attach_function(1, gotoSettingsScreen);
 	
 	SavedToEEPROM_line0.attach_function(1, gotoSettingsScreen);
@@ -590,7 +592,7 @@ void attachFunctionToLine(void)
 	Setup_RTC_line6.attach_function(1, gotoSettingsScreen );
 		
 	//todo change first line
-	Launch_line1.attach_function(1,emptyfunction);
+	Launch_line1.attach_function(1, emptyfunction);
 	Launch_line4.attach_function(1, initSensors);
 	Launch_line4.attach_function(2, gotoDurationScreen);
 	Launch_line5.attach_function(1, gotoMainScreen);
@@ -674,13 +676,32 @@ static void debugADC(void)
 	}
 }
 
-static void debugMAX(void)
+static void debugSD(void)
 {
+	DDRH = 0xff;
+	DDRL = 0xff;
+	PORTL = 0; //enable buffer
+	PORTH &=~(1<<3);
+	PORTH |= (1<<2); //select SD
+	PORTH &= ~(1<<1);
+	PORTH &= ~(1<<0);
+	SD.begin(16);
 	while(1)
 	{
-		lcd.clear();
-		lcd.home();
-		
+		File dataFile = SD.open("Test.csv", FILE_WRITE);
+		if (dataFile)
+		{
+			lcd.clear();
+			lcd.print("SD OPEN");
+			dataFile.println("COUCOUC");
+			dataFile.close();
+		}
+		else
+		{
+			lcd.clear();
+			lcd.print("SD FAILED");
+		}
+		while(1);
 	}
 }
 
@@ -820,7 +841,7 @@ void gotoMeasuringScreen(void)
 void gotoEndOfMeasuresScreen(void)
 {
 	menu.change_screen(EndOfMeasures_Screen);
-	menu.switch_focus(true);
+	//menu.switch_focus(true);
 }
 
 static void incrementNTC_nb(void)
@@ -855,7 +876,7 @@ static void decrementTC_nb(void)
 
 static void incrementI_nb(void)
 {
-	if(I_nb != MAX_I_NB) //We can add an I because we are not yet full
+	if(I_nb != 2) //We can add an I because we are not yet full
 	{
 		I_nb++;
 	}
@@ -1119,6 +1140,10 @@ static void incrementMinute(void)
 	if(minute<60)
 	{
 		minute++;
+		if(minute == 60)
+		{
+			minute = 0;
+		}
 	}
 }
 

@@ -102,7 +102,7 @@ void computeTime(void)
 	uint32_t TimeInSeconds;
 	IntervalMeasure = (60 * IntervalMinutes) + IntervalSeconds; //nb of seconds for interval
 	Global_Begin_Datetime = RTC.now();
-	TimeInSeconds = (DurationHour*3600) + (DurationMin * 60) + DurationSec;
+	TimeInSeconds = (DurationHour*3600) + (DurationMin * 60) + DurationSec; //Duration in seconds
 	Global_End_Datetime = Global_Begin_Datetime + TimeSpan(TimeInSeconds);
 }
 
@@ -149,7 +149,7 @@ void getNTCMeasures(void)
 		NTC_Measure_Array[i] = static_cast<float>(ADCread(NTCChannel[i])); //value from 0-1023 = ADC register
 		NTC_Measure_Array[i] = ( NTC_Measure_Array[i]*V_SUPPLY) / 1024.0; //now the array contain the voltage from 0 to 5V
 		res = ((R_LINE_NTC * NTC_Measure_Array[i]) / (V_SUPPLY - NTC_Measure_Array[i])); //With the voltage we can compute the R value
-		NTC_Measure_Array[i] = B_FACTOR / log(res/R_INF); //Steinhart Equation
+		NTC_Measure_Array[i] = B_FACTOR / log(res/R_INF); //Steinhart-Hart Equation
 	}
 }
 

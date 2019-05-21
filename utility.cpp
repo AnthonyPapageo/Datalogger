@@ -32,10 +32,11 @@ String FileName = "default.csv";
 
 
 ////////Static Prototype///////
-static void SdWriteInt(int32_t data);
-static void SdWriteFloat(float fdata, const uint8_t precision);
+static void SdWriteInt(File& dataFile,int32_t data);
+static void SdWriteFloat(File& dataFile,float fdata, const uint8_t precision);
+static void SdWriteTime(File& dataFile);
 static void correctEEPROM(void);
-static void SdWriteTime(void);
+
 
 
 /*void initMux(void)
@@ -113,7 +114,7 @@ void initRTC(void)
 	}
 }
 
-void setVref(bool b)
+void enableVref(bool b)
 {
 	DDRG |= (1 << 2); //SHDN pin as output
 	if (b)
@@ -228,17 +229,17 @@ void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbut
 	else if(right.isPressed())
 	{
 		menu.call_function(7); //Increment function saved on the seventh
-		_delay_ms(500);
+		_delay_ms(150);
 	}
 	else if(left.isPressed())
 	{
 		menu.call_function(6); //Decrement function saved on the sixth
-		_delay_ms(500);
+		_delay_ms(150);
 	}
 	else if(Ok.getSingleDebouncedPress())
 	{
 		uint8_t i = 1 ;
-		while((menu.call_function(i)) && (i<= 5))
+		while((menu.call_function(i)) && (i<= 5) && (menu.get_currentScreen() == current_screen))
 		//Call the function and check what it returns
 		//if the call_function returns false, there is no more function
 		//so we get out. Verify that we don't go over 5 (reserved functions)
@@ -315,13 +316,18 @@ void resetToDefault(void)
 
 void setFileName(void)
 {
+	DDRH = 0xff;
+	DDRL = 0xff;
+	PORTL = 0; //enable buffer
+	PORTH &=~(1<<3);
+	PORTH |= (1<<2); //select SD
+	PORTH &= ~(1<<1);
+	PORTH &= ~(1<<0);
 	String str = "";
-	str = String(Global_Begin_Datetime.day()) + "-" + String(Global_Begin_Datetime.month()) + "-" + String(Global_Begin_Datetime.year()); //Folder is date
-	str = "/" + str;
-	SD.begin(CS_SD);
-	SD.mkdir(str);
-	FileName = str + "/" + String(Global_Begin_Datetime.hour()) + "-" + String(Global_Begin_Datetime.minute()) + ".csv"; //File is time of beginning
-	
+	//str = String(Global_Begin_Datetime.day()) + "-" + String(Global_Begin_Datetime.month()) + "-" + String(Global_Begin_Datetime.year()); //Folder is date
+	//SD.begin(16);//SD.begin(CS_SD);(CS_SD);
+	//SD.mkdir(str);
+	FileName = str  + String(Global_Begin_Datetime.hour()) + "-" + String(Global_Begin_Datetime.minute()) + ".csv"; //File is time of beginning
 }
 
 void firstLineSD(void) //Write the header of the CSV file and get the beginning time
@@ -329,13 +335,22 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 	uint8_t i;
 	String temp;
 	computeTime();
+	//todo retirer
+	DDRH = 0xff;
+	DDRL = 0xff;
+	PORTL = 0; //enable buffer
+	PORTH &=~(1<<3);
+	PORTH |= (1<<2); //select SD
+	PORTH &= ~(1<<1);
+	PORTH &= ~(1<<0);
 	setFileName();
+	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
 	File dataFile = SD.open(FileName, FILE_WRITE);
+	
 	led_SD(true);//Assert that we are writing to the SD card
 	
 	if(dataFile)
 	{
-		
 		dataFile.print("N°;");
 		for(i = 0; i<TC_nb;i++)
 		{
@@ -359,14 +374,16 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 		}
 		for(i=0;i<I_nb;i++)
 		{
-			temp = "I" + String(i+1) +";"; //I
+			temp = "I(uA)" + String(i+1) +";"; //I
+			dataFile.print(temp);
+			temp = "I_vbus(mV)" + String(i+1) +";"; //I
 			dataFile.print(temp);
 		}
 		temp = "Date;";
 		dataFile.print(temp);
 		
 		temp = "Time;"; //last column
-		dataFile.print(temp);
+		dataFile.println(temp);
 		
 		dataFile.close();
 	}
@@ -391,74 +408,82 @@ void saveToSD(void)
 {
 	uint8_t i;
 	String temp;
-	SdWriteInt(static_cast<int32_t>(Nb_Of_Measure)); // first column
+	DDRH = 0xff;
+	DDRL = 0xff;
+	PORTL = 0; //enable buffer
+	PORTH &=~(1<<3);
+	PORTH |= (1<<2); //select SD
+	PORTH &= ~(1<<1);
+	PORTH &= ~(1<<0);
+	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
+	File dataFile = SD.open(FileName, FILE_WRITE);
+	SdWriteInt(dataFile,static_cast<int32_t>(Nb_Of_Measure)); // first column
 	for(i = 0; i<TC_nb;i++)
 	{
-		SdWriteFloat(TC_Measure_Array[i],1);
+		SdWriteFloat(dataFile,TC_Measure_Array[i],1);
 	}
 	for(i=0; i<NTC_nb;i++)
 	{
-		SdWriteFloat(NTC_Measure_Array[i],1);
+		SdWriteFloat(dataFile,NTC_Measure_Array[i],1);
 	}
 	for(i=0;i<V24_nb;i++)
 	{
-		SdWriteFloat(V24_Measure_Array[i],3);
+		SdWriteFloat(dataFile,V24_Measure_Array[i],3);
 	}
 	for(i=0;i<V5_nb;i++)
 	{
-		SdWriteFloat(V5_Measure_Array[i],3);
+		SdWriteFloat(dataFile,V5_Measure_Array[i],3);
 	}
 	for(i=0;i<(2*I_nb);i++)
 	{
-		SdWriteInt(I_Measure_Array[i]);
+		SdWriteInt(dataFile,I_Measure_Array[i]);
 	}
 	
-	SdWriteTime();
+	SdWriteTime(dataFile);
+	dataFile.println();
+	dataFile.close();
+	
 	
 	led_SD(false);
 	
 }
 
-static void SdWriteInt(int32_t data)
+static void SdWriteInt(File& dataFile, int32_t data)
 {
-	String string_data = ""; 
-	File dataFile = SD.open(FileName, FILE_WRITE);
+	String string_data = "";
 	string_data = String(data) + ";";
 	if(dataFile)
 	{
 		led_SD(true);//Assert that we are writing to the SD card
 		dataFile.print(string_data);
-		dataFile.close();
 	}
 	led_SD(false);
 }
 
-static void SdWriteFloat(float fdata, const uint8_t precision )
+static void SdWriteFloat(File& dataFile, float fdata, const uint8_t precision )
 {
 	String string_data = "";
-	File dataFile = SD.open(FileName, FILE_WRITE);
 	string_data = String(fdata,precision) + ";";
 	if(dataFile)
 	{
 		led_SD(true);//Assert that we are writing to the SD card
 		dataFile.print(string_data);
-		dataFile.close();
 	}
 	led_SD(false);
 }
 
-static void SdWriteTime(void) //first the date then the time
+static void SdWriteTime(File& dataFile) //first the date then the time
 {
 	String temp;
 	DateTime dt = RTC.now();
 	Global_Current_DateTime = dt;
-	File dataFile = SD.open(FileName, FILE_WRITE);
 	if(dataFile)
 	{
 		led_SD(true);
 		temp = String(dt.day()) + "-" + String(dt.month()) + ";";
 		dataFile.print(temp);
-		temp = String(dt.hour()) + "-"  + String(dt.minute()) + "-" + String(dt.second()) + ";" ;
+		temp = String(dt.hour()) + ":"  + String(dt.minute()) + ":" + String(dt.second()) + ";" ;
+		dataFile.print(temp);
 	}
 	led_SD(false);
 }

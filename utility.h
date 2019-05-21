@@ -9,7 +9,7 @@
 void initMux(void);
 void setMux(const uint8_t value);
 void initRTC(void);
-void setVref(bool b);
+void enableVref(bool b);
 bool IsSdInserted(void);
 void saveToEEPROM(void);
 void LoadFromEEPROM(void);

@@ -34,7 +34,6 @@ static SPISettings max31856_spisettings = SPISettings(400000, MSBFIRST, SPI_MODE
 MAX31856::MAX31856(int8_t mux_channel) {
 
 	_muxChannel = mux_channel;
-
 }
 
 void MAX31856::begin(void)
@@ -163,8 +162,7 @@ void MAX31856::oneShotTemperature(void) {
 */
 /**************************************************************************/
 float MAX31856::readCJTemperature(void) {
-	oneShotTemperature();
-
+	
 	int16_t temp16 = readRegister16(MAX31856_CJTH_REG);
 	float tempfloat = temp16;
 	tempfloat /= 256.0;
@@ -268,13 +266,10 @@ void MAX31856::readRegisterN(uint8_t addr, uint8_t buffer[], uint8_t n) {
 	delayMicroseconds(20);
 
 	SPI.transfer(addr);
-	//Serial.print("$"); Serial.print(addr, HEX); Serial.print(": ");
 	while (n--) {
 		buffer[0] = SPI.transfer(0xFF);
-		//Serial.print(" 0x"); Serial.print(buffer[0], HEX);
 		buffer++;
 	}
-	//Serial.println();
 	SPI.endTransaction();
 
 	setMux(CS_DISABLE);
@@ -288,7 +283,6 @@ void MAX31856::writeRegister8(uint8_t addr, uint8_t data) {
 	delayMicroseconds(20);
 	SPI.transfer(addr);
 	SPI.transfer(data);
-	//Serial.print("$"); Serial.print(addr, HEX); Serial.print(" = 0x"); Serial.println(data, HEX);
 	SPI.endTransaction();
 	setMux(CS_DISABLE);
 }

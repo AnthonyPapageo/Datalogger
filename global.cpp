@@ -16,7 +16,7 @@ float TC_Measure_Array[MAX_TC_NB];
 float NTC_Measure_Array[MAX_NTC_NB];
 float V24_Measure_Array[MAX_V24_NB];
 float V5_Measure_Array[MAX_V5_NB];
-int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current TODO CAST getbusmillivolts in INT32
+int32_t I_Measure_Array[MAX_I_NB];
 uint32_t IntervalMeasure = 1;
 char TC_Type_Array[8] = {'T','K','J','N','R','S','B','E'};
 char TC_Type[2] = {'T',0}; // 0 = '\0' so it stops printing, thanks Arnaud !
