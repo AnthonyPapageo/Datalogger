@@ -118,8 +118,8 @@ LiquidScreen welcome_Screen(welcome_line0, welcome_line1, welcome_line2, welcome
 /////////////Main Screen////////////////////
 const char main_text0[] PROGMEM = "    MAIN MENU";
 const char main_text1[] PROGMEM = "1: SETTINGS";
-const char main_text2[] PROGMEM = "2: DEBUG";
-const char main_text3[] PROGMEM = "3: LAUNCH A TEST";
+const char main_text2[] PROGMEM = "2: LAUNCH A TEST";
+const char main_text3[] PROGMEM = "3: DEBUG";
 LiquidLine main_line0(1,0,main_text0);
 LiquidLine main_line1(1,1,main_text1);
 LiquidLine main_line2(1,2,main_text2);
@@ -128,12 +128,12 @@ LiquidScreen main_Screen(main_line0,main_line1,main_line2,main_line3);
 
 
 /////////////Settings Screen////////////////////
-const char Settings_text0[] PROGMEM = " SETTINGS MENU";
+const char Settings_text0[] PROGMEM = "  SETTINGS MENU";
 const char Settings_text1[] PROGMEM = "1: NUMBER OF DEVICE";
 const char Settings_text2[] PROGMEM = "2: TIME INTERVAL";
 const char Settings_text3[] PROGMEM = "3: NTC CONFIG";
 const char Settings_text4[] PROGMEM = "4: SHUNT VALUE";
-const char Settings_text5[] PROGMEM = "5: TC TYPE";
+const char Settings_text5[] PROGMEM = "5: SET TC TYPE";
 const char Settings_text6[] PROGMEM = "6: SAVE CONFIG";
 const char Settings_text7[] PROGMEM = "7: RESET TO DEFAULT";
 const char Settings_text8[] PROGMEM = "8: SET TIME";
@@ -503,8 +503,8 @@ void attachFunctionToLine(void)
 	welcome_line3.attach_function(1, gotoMainScreen);
 	
 	main_line1.attach_function(1, gotoSettingsScreen); //Start the settings screen
-	main_line2.attach_function(1, debugSD); //Debug
-	main_line3.attach_function(1, gotoLaunchScreen); //Launch test
+	main_line2.attach_function(1, gotoLaunchScreen); //Debug
+	main_line3.attach_function(1, debugSD); //Launch test
 
 	Settings_line0.attach_function(1, gotoMainScreen);
 	Settings_line1.attach_function(1, gotoSettingsNumberScreen);
@@ -624,23 +624,45 @@ static void debugRTC(void)
 		dt = RTC.now();
 		lcd.print(dt.hour());
 		lcd.print(":");
-		lcd.print(dt.minute());
+		lcd.print(String(dt.minute()));
 		lcd.print(":");
 		lcd.print(dt.second());
-		lcd.setCursor(0,2);
+		lcd.setCursor(0,1);
 		lcd.print(dt.day());
 		lcd.print(":");
 		lcd.print(dt.month());
 		lcd.print(":");
 		lcd.print(dt.year());
 		_delay_ms(500);
+		INA.setI2CSpeed(I2C_SPEED);
+		INA.begin(3, DEFAULT_R_SHUNT ,0); //Init INA device for I1a or I1b with Shunt from user
+		INA.setBusConversion(8500); // Maximum conversion time 8.244ms
+		INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
+		INA.setAveraging(128); //Average 128 readings
+		INA.setMode(INA_MODE_CONTINUOUS_BOTH);
+		lcd.setCursor(0,2);
+		dt = RTC.now(); //check si la RTC est reset
+		lcd.print(dt.hour());
+		lcd.print(":");
+		lcd.print(String(dt.minute()));
+		lcd.print(":");
+		lcd.print(dt.second());
+		lcd.setCursor(0,3);
+		lcd.print(dt.day());
+		lcd.print(":");
+		lcd.print(dt.month());
+		lcd.print(":");
+		lcd.print(dt.year());
+		while(1);
+		
+		
 	}
 }
 
 static void debugINA(void)
 {
 	INA.setI2CSpeed(I2C_SPEED);
-	INA.begin(3, DEFAULT_R_SHUNT ,1); //Init INA device for I1a or I1b with Shunt from user
+	INA.begin(3, DEFAULT_R_SHUNT ,0); //Init INA device for I1a or I1b with Shunt from user
 	INA.setBusConversion(8500); // Maximum conversion time 8.244ms
 	INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
 	INA.setAveraging(128); //Average 128 readings
@@ -649,10 +671,10 @@ static void debugINA(void)
 	{
 		lcd.clear();
 		lcd.home();
-		lcd.print(INA.getBusMilliVolts());
+		lcd.print(INA.getBusMilliVolts(0));
 		lcd.print("mV");
 		lcd.setCursor(0,1);
-		lcd.print(INA.getBusMicroAmps());
+		lcd.print(INA.getBusMicroAmps(0));
 		lcd.print("uA");
 		_delay_ms(500);
 		
@@ -678,7 +700,7 @@ static void debugADC(void)
 
 static void debugSD(void)
 {
-	DDRH = 0xff;
+	DDRH |= 0xF;
 	DDRL = 0xff;
 	PORTL = 0; //enable buffer
 	PORTH &=~(1<<3);
@@ -686,23 +708,22 @@ static void debugSD(void)
 	PORTH &= ~(1<<1);
 	PORTH &= ~(1<<0);
 	SD.begin(16);
-	while(1)
+	File dataFile = SD.open("/");
+	if (dataFile)
 	{
-		File dataFile = SD.open("Test.csv", FILE_WRITE);
-		if (dataFile)
-		{
-			lcd.clear();
-			lcd.print("SD OPEN");
-			dataFile.println("COUCOUC");
-			dataFile.close();
-		}
-		else
-		{
-			lcd.clear();
-			lcd.print("SD FAILED");
-		}
-		while(1);
+		SD.mkdir("23-05");
+		lcd.clear();
+		File myFile = SD.open("/23-05/test.txt", FILE_WRITE);
+		lcd.print("SD OPEN");
+		myFile.println("COUCOUC");
+		myFile.close();
 	}
+	else
+	{
+		lcd.clear();
+		lcd.print("SD FAILED");
+	}
+	while(1);
 }
 
 
@@ -806,13 +827,13 @@ void gotoSavedToEEPROMScreen(void)
 void gotoSetupRTCScreen(void)
 {
 	DateTime dt = RTC.now();
-	menu.change_screen(Setup_RTC_Screen);
-	menu.switch_focus(true);
 	year = dt.year();
 	month = dt.month();
 	day = dt.day();
 	hour = dt.hour();
 	minute = dt.minute();
+	menu.change_screen(Setup_RTC_Screen);
+	menu.switch_focus(true);
 }
 
 void gotoLaunchScreen(void) //check if we can save things
@@ -1242,6 +1263,7 @@ void endMeasures(void)
 	getElapsedTime();
 	Global_Current_DateTime = Global_End_Datetime; //it's the end we don't need to update
 	stopTimer();
+	Global_Is_multifile = false;
 	gotoEndOfMeasuresScreen();
 }
 

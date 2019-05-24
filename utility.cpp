@@ -29,6 +29,7 @@ do                          \
 
 
 String FileName = "default.csv";
+String path = "/";
 
 
 ////////Static Prototype///////
@@ -54,6 +55,7 @@ static void correctEEPROM(void);
 
 void setMux(const uint8_t value)
 {
+	PORTE &= 0x07; /clear PE3 to PE7
 	if (value < 20)
 	{
 		PORTB &= ~(1 << 0); //SS = 0
@@ -62,7 +64,7 @@ void setMux(const uint8_t value)
 		_delay_us(10);
 		PORTB |= (1 << 5); //Latch address mux input
 	}
-	else if (value == CS_DISABLE)
+	else
 	{
 		PORTB |=(1 << 0); //SS = 1
 	}
@@ -184,7 +186,7 @@ void LoadFromEEPROM(void)
 	R_SHUNT = eeprom_read_dword(&NV_R_SHUNT);
 	//TC_Type[0] = static_cast<char>(eeprom_read_byte(&NV_TC_Type));	
 	if((NTC_nb > MAX_NTC_NB) ||( TC_nb > MAX_TC_NB) || (I_nb> MAX_I_NB) || (V5_nb > MAX_V5_NB) || (V24_nb > MAX_V24_NB) 
-	|| (IntervalMinutes >30) || (IntervalSeconds>60)) 
+	|| (IntervalMinutes >30) || (IntervalSeconds>60) || R_SHUNT > 100000 ) 
 	{
 		correctEEPROM();
 	} //Check if the EEPROM is not full of 1, if it is, correct to the default value
@@ -198,7 +200,7 @@ static void correctEEPROM(void)
 	if(I_nb > MAX_I_NB){I_nb = 0; }
 	if(V24_nb > MAX_V24_NB){V24_nb = 0; }
 	if(V5_nb > MAX_V5_NB){V5_nb = 0; }
-	if(R_SHUNT == 65535){R_SHUNT = DEFAULT_R_SHUNT; }
+	if(R_SHUNT > 100000){R_SHUNT = DEFAULT_R_SHUNT; }
 	
 	if(isnan(R_25)) //check if the value is a NaN
 	{
@@ -316,27 +318,32 @@ void resetToDefault(void)
 
 void setFileName(void)
 {
-	DDRH = 0xff;
+	DateTime dt = RTC.now();
+	DDRH |= 0xF;
 	DDRL = 0xff;
 	PORTL = 0; //enable buffer
 	PORTH &=~(1<<3);
 	PORTH |= (1<<2); //select SD
 	PORTH &= ~(1<<1);
 	PORTH &= ~(1<<0);
-	String str = "";
-	//str = String(Global_Begin_Datetime.day()) + "-" + String(Global_Begin_Datetime.month()) + "-" + String(Global_Begin_Datetime.year()); //Folder is date
-	//SD.begin(16);//SD.begin(CS_SD);(CS_SD);
-	//SD.mkdir(str);
-	FileName = str  + String(Global_Begin_Datetime.hour()) + "-" + String(Global_Begin_Datetime.minute()) + ".csv"; //File is time of beginning
+	path = String(dt.day()) + "-" + String(dt.month())  + "/"; //Folder is date + "-" + String(dt.year())
+	//path = "test";
+	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
+	SD.open("/");
+	SD.mkdir(path);
+	FileName = path + "/" + String(dt.hour()) + "h" + String(dt.minute()) + ".csv"; //File is time of beginning
 }
 
 void firstLineSD(void) //Write the header of the CSV file and get the beginning time
 {
 	uint8_t i;
 	String temp;
-	computeTime();
+	if(!Global_Is_multifile) //we don't need to calculate time when it's multifile
+	{
+		computeTime();
+	}
 	//todo retirer
-	DDRH = 0xff;
+	DDRH |= 0xF;
 	DDRL = 0xff;
 	PORTL = 0; //enable buffer
 	PORTH &=~(1<<3);
@@ -345,6 +352,7 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 	PORTH &= ~(1<<0);
 	setFileName();
 	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
+	//SD.open(path);
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	
 	led_SD(true);//Assert that we are writing to the SD card
@@ -374,11 +382,12 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 		}
 		for(i=0;i<I_nb;i++)
 		{
-			temp = "I(uA)" + String(i+1) +";"; //I
+			temp = "I" + String(i+1) +"(uA);"; //I
 			dataFile.print(temp);
-			temp = "I_vbus(mV)" + String(i+1) +";"; //I
+			temp = "I" + String(i+1) +"_vBus(mV);"; //I
 			dataFile.print(temp);
 		}
+		dataFile.print("Card temp;");
 		temp = "Date;";
 		dataFile.print(temp);
 		
@@ -408,7 +417,8 @@ void saveToSD(void)
 {
 	uint8_t i;
 	String temp;
-	DDRH = 0xff;
+	float average = 0.0;
+	DDRH |= 0xF;
 	DDRL = 0xff;
 	PORTL = 0; //enable buffer
 	PORTH &=~(1<<3);
@@ -416,11 +426,13 @@ void saveToSD(void)
 	PORTH &= ~(1<<1);
 	PORTH &= ~(1<<0);
 	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
+	//SD.open(path);
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	SdWriteInt(dataFile,static_cast<int32_t>(Nb_Of_Measure)); // first column
 	for(i = 0; i<TC_nb;i++)
 	{
 		SdWriteFloat(dataFile,TC_Measure_Array[i],1);
+		average += CJT_Measure_Array[i];
 	}
 	for(i=0; i<NTC_nb;i++)
 	{
@@ -438,12 +450,13 @@ void saveToSD(void)
 	{
 		SdWriteInt(dataFile,I_Measure_Array[i]);
 	}
-	
+		
+	average = average / static_cast<float>(TC_nb);
+	SdWriteFloat(dataFile,average,1);	//Card temp
 	SdWriteTime(dataFile);
 	dataFile.println();
 	dataFile.close();
-	
-	
+
 	led_SD(false);
 	
 }
@@ -475,14 +488,13 @@ static void SdWriteFloat(File& dataFile, float fdata, const uint8_t precision )
 static void SdWriteTime(File& dataFile) //first the date then the time
 {
 	String temp;
-	DateTime dt = RTC.now();
-	Global_Current_DateTime = dt;
+	Global_Current_DateTime = RTC.now();
 	if(dataFile)
 	{
 		led_SD(true);
-		temp = String(dt.day()) + "-" + String(dt.month()) + ";";
+		temp = String(Global_Current_DateTime.day()) + "-" + String(Global_Current_DateTime.month()) + ";";
 		dataFile.print(temp);
-		temp = String(dt.hour()) + ":"  + String(dt.minute()) + ":" + String(dt.second()) + ";" ;
+		temp = String(Global_Current_DateTime.hour()) + ":"  + String(Global_Current_DateTime.minute()) + ":" + String(Global_Current_DateTime.second()) + ";" ;
 		dataFile.print(temp);
 	}
 	led_SD(false);
@@ -491,7 +503,7 @@ static void SdWriteTime(File& dataFile) //first the date then the time
 
 void led_SD(bool b)
 {
-	DDRL |= (1 << 7);
+	/*DDRL |= (1 << 7);
 	if(b)
 	{
 		PORTL |=(1 << 7);
@@ -499,7 +511,17 @@ void led_SD(bool b)
 	else
 	{
 		PORTL &= ~(1 << 7);
+	}*/
+	DDRG |= (1 << 5);
+	if(b)
+	{
+		PORTG |= (1 << 5);
 	}
+	else
+	{
+		PORTG &= ~(1 << 5);
+	}
+	
 	
 }
 

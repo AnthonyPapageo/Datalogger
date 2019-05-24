@@ -23,6 +23,7 @@ extern LiquidCrystal lcd;
 extern RTC_DS3231 RTC;
 extern LiquidScreen* current_screen;//Used so we have to call get_currentScreen only once
 extern MAX31856 max_array[20];
+extern LiquidMenu menu;
 
 ////////MEASURE///////////
 extern float TC_Measure_Array[MAX_TC_NB];
@@ -30,6 +31,7 @@ extern float NTC_Measure_Array[MAX_NTC_NB];
 extern float V24_Measure_Array[MAX_V24_NB];
 extern float V5_Measure_Array[MAX_V5_NB];
 extern int32_t I_Measure_Array[MAX_I_NB];//contain bus voltage and current
+extern float CJT_Measure_Array[MAX_TC_NB];
 extern uint32_t IntervalMeasure;
 extern char TC_Type_Array[8];
 extern char TC_Type[2];
@@ -39,6 +41,7 @@ extern DateTime Global_Begin_Datetime;
 extern DateTime Global_Current_DateTime;
 extern DateTime Global_End_Datetime;
 extern bool Global_test_launched;
+extern bool Global_Is_multifile;
 
 /////////EEPROM DATA///////////
 extern uint8_t EEMEM NV_NTC_nb;

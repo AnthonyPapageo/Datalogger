@@ -7,6 +7,9 @@
 //DEBUG ZONE
 LiquidScreen* current_screen = &main_Screen;
 RTC_DS3231 RTC;
+INA_Class INA;
+LiquidCrystal lcd(RS, RW, ENABLE_LCD, D4, D5, D6, D7);//4bit
+LiquidMenu menu(lcd);
 
 /////////MAX///////////
 MAX31856 max_array[20] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}; //Call the 20 constructor
@@ -17,6 +20,7 @@ float NTC_Measure_Array[MAX_NTC_NB];
 float V24_Measure_Array[MAX_V24_NB];
 float V5_Measure_Array[MAX_V5_NB];
 int32_t I_Measure_Array[MAX_I_NB];
+float CJT_Measure_Array[MAX_TC_NB];
 uint32_t IntervalMeasure = 1;
 char TC_Type_Array[8] = {'T','K','J','N','R','S','B','E'};
 char TC_Type[2] = {'T',0}; // 0 = '\0' so it stops printing, thanks Arnaud !
@@ -26,6 +30,7 @@ DateTime Global_Begin_Datetime;
 DateTime Global_Current_DateTime;
 DateTime Global_End_Datetime;
 bool Global_test_launched = false;
+bool Global_Is_multifile = false;
 
 /////////EEPROM DATA///////////
 uint8_t EEMEM NV_NTC_nb = 0;

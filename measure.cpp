@@ -17,15 +17,16 @@ float R_INF;
 void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 {
 	uint8_t i;
+	DateTime dt;
 	ADCinit(); // initialize and progress a dummy conversion and enable VREF
 	
 	if(I_nb>0) //Init INA
 	{
-		INA.setI2CSpeed(I2C_SPEED);
-		INA.begin(3, R_SHUNT,1); //Init INA device for I1a or I1b with Shunt from user
+		INA.setI2CSpeed(INA_I2C_STANDARD_MODE);
+		INA.begin(3, R_SHUNT,0); //Init INA device for I1a or I1b with Shunt from user
 		if(I_nb == 2 )
 		{
-			INA.begin(3, DEFAULT_R_SHUNT,2); //I2 device has a fixed shunt, If I_nb == 2, I2 is used
+			INA.begin(3, DEFAULT_R_SHUNT,1); //I2 device has a fixed shunt, If I_nb == 2, I2 is used
 		}
 		INA.setBusConversion(8500); // Maximum conversion time 8.244ms
 		INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
@@ -102,7 +103,7 @@ void computeTime(void)
 	uint32_t TimeInSeconds;
 	IntervalMeasure = (60 * IntervalMinutes) + IntervalSeconds; //nb of seconds for interval
 	Global_Begin_Datetime = RTC.now();
-	TimeInSeconds = (DurationHour*3600) + (DurationMin * 60) + DurationSec; //Duration in seconds
+	TimeInSeconds = (DurationHour*3600UL) + (DurationMin * 60UL) + DurationSec; //Duration in seconds
 	Global_End_Datetime = Global_Begin_Datetime + TimeSpan(TimeInSeconds);
 }
 
@@ -129,13 +130,14 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 	for (i = 0; i<TC_nb; i++) 
 	{
 		TC_Measure_Array[i] = max_array[i].readThermocoupleTemperature(); //read the temperature for each MAX
+		CJT_Measure_Array[i] = max_array[i].readCJTemperature();
 	}
 	
 	Nb_Of_Measure++;//increment counter of number of measure
-	if(Nb_Of_Measure == 65534) //max number of line for excel -1, file is full so we create a new file
+	if((Nb_Of_Measure % 65534) == 0)  // //max number of line for excel -1, file is full so we create a new file
 	{
 		firstLineSD(); //get new filename and create a new file
-		Nb_Of_Measure = 0; //reset counter
+		Global_Is_multifile = true;
 	}
 	PORTA ^= (1<<1);
 }
@@ -143,13 +145,14 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 void getNTCMeasures(void)
 {
 	uint8_t i;
-	float res;
+	volatile float res;
 	for (i = 0; i<NTC_nb; i++)
 	{
 		NTC_Measure_Array[i] = static_cast<float>(ADCread(NTCChannel[i])); //value from 0-1023 = ADC register
 		NTC_Measure_Array[i] = ( NTC_Measure_Array[i]*V_SUPPLY) / 1024.0; //now the array contain the voltage from 0 to 5V
-		res = ((R_LINE_NTC * NTC_Measure_Array[i]) / (V_SUPPLY - NTC_Measure_Array[i])); //With the voltage we can compute the R value
-		NTC_Measure_Array[i] = B_FACTOR / log(res/R_INF); //Steinhart-Hart Equation
+		res = (R_LINE_NTC / ((V_SUPPLY/NTC_Measure_Array[i]) - 1.0  ));
+		//res = ((R_LINE_NTC * NTC_Measure_Array[i]) / (V_SUPPLY - NTC_Measure_Array[i])); //With the voltage we can compute the R value
+		NTC_Measure_Array[i] = (B_FACTOR / log(res/R_INF)) - 273.15; //Steinhart-Hart Equation and transformation in Celsius
 	}
 }
 
@@ -176,14 +179,10 @@ void getV5Measures(void)
 void getIMeasures(void)
 {
 	uint8_t i;
-	uint8_t j;
-	for (i = 1; i<=I_nb;i++)
+	for (i = 0; i<I_nb;i++)
 	{
-		for(j=0; j<2;j++) //2 measures we get only Current and BUS voltage
-		{
-			I_Measure_Array[j] = INA.getBusMicroAmps(i);
-			I_Measure_Array[j] = static_cast<int32_t>(INA.getBusMilliVolts(i));
-		}		
+		I_Measure_Array[(2*i)] = INA.getBusMicroAmps(i); //sensor 0 is sensor 1 in INA lib
+		I_Measure_Array[((2*i)+1)] = static_cast<int32_t>(INA.getBusMilliVolts(i));	
 	}
 }
 
