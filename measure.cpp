@@ -26,7 +26,7 @@ void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 		INA.begin(3, R_SHUNT,0); //Init INA device for I1a or I1b with Shunt from user
 		if(I_nb == 2 )
 		{
-			INA.begin(3, DEFAULT_R_SHUNT,1); //I2 device has a fixed shunt, If I_nb == 2, I2 is used
+			INA.begin(3, DEFAULT_R_SHUNT,1); //I2 device has a fixed shunt.
 		}
 		INA.setBusConversion(8500); // Maximum conversion time 8.244ms
 		INA.setShuntConversion(8500); // Maximum conversion time 8.244ms
@@ -41,7 +41,7 @@ void initSensors(void) //Init ADC, INA and set correct TC type for each MAX31856
 		max_array[i].setAveraging(4); //Average 4 measures
 	}
 	
-	if(TC_Type[0] != 'T') //By default it's T, so we have to change for another type
+	if(TC_Type[0] != 'T') //By default it's T type, so we have to change for another type
 	{
 		if (TC_Type[0] == 'K')
 		{
@@ -112,7 +112,7 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 {
 	uint8_t i;
 	uint32_t temp;
-	PORTA ^= (1<<1);//todo retiré led
+	PORTJ ^= (1<<6);
 	
 	temp = millis(); //
 	for (i = 0; i<TC_nb; i++)
@@ -125,7 +125,7 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 	getIMeasures();
 	if(TC_nb > 0)//if we are taking TC measure, we have to wait
 	{
-		while(millis() < temp + 500); //the other measures didn't take more than 500ms, we wait here
+		while(millis() < (temp + 500)); //the other measures didn't take more than 500ms, we wait here
 	}
 	for (i = 0; i<TC_nb; i++) 
 	{
@@ -134,12 +134,12 @@ void getAllMeasures(void) //Launch for each MAX31856 a conversion, get other mea
 	}
 	
 	Nb_Of_Measure++;//increment counter of number of measure
-	if((Nb_Of_Measure % 65534) == 0)  // //max number of line for excel -1, file is full so we create a new file
+	if((Nb_Of_Measure % 65534) == 0)  //max number of line for excel -1, file is full so we create a new file
 	{
 		firstLineSD(); //get new filename and create a new file
 		Global_Is_multifile = true;
 	}
-	PORTA ^= (1<<1);
+	PORTJ ^= (1<<6);
 }
 
 void getNTCMeasures(void)
@@ -151,7 +151,7 @@ void getNTCMeasures(void)
 		NTC_Measure_Array[i] = static_cast<float>(ADCread(NTCChannel[i])); //value from 0-1023 = ADC register
 		NTC_Measure_Array[i] = ( NTC_Measure_Array[i]*V_SUPPLY) / 1024.0; //now the array contain the voltage from 0 to 5V
 		res = (R_LINE_NTC / ((V_SUPPLY/NTC_Measure_Array[i]) - 1.0  ));
-		//res = ((R_LINE_NTC * NTC_Measure_Array[i]) / (V_SUPPLY - NTC_Measure_Array[i])); //With the voltage we can compute the R value
+		res = ((R_LINE_NTC * NTC_Measure_Array[i]) / (V_SUPPLY - NTC_Measure_Array[i])); //With the voltage we can compute the R value
 		NTC_Measure_Array[i] = (B_FACTOR / log(res/R_INF)) - 273.15; //Steinhart-Hart Equation and transformation in Celsius
 	}
 }

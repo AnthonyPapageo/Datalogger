@@ -12,9 +12,8 @@
 #include "utility.h"
 #include "menu.h"
 #include "measure.h"
-
-
 #include "ADC.h"
+
 static void debugRTC(void);
 static void debugINA(void);
 static void debugADC(void);
@@ -108,23 +107,23 @@ uint8_t minute = 1;
 const char welcome_text0[] PROGMEM = "DATALOGGER TAS-B";
 const char welcome_text1[] PROGMEM = "TC AND NTC MEASURES";
 const char welcome_text2[] PROGMEM = "PRESS OK";
-const char welcome_text3[] PROGMEM =  __TIME__;
+// const char welcome_text3[] PROGMEM =  __TIME__;
 LiquidLine welcome_line0(1,0,welcome_text0);
 LiquidLine welcome_line1(1,1,welcome_text1);
 LiquidLine welcome_line2(1,2,welcome_text2);
-LiquidLine welcome_line3(1,3,welcome_text3);
-LiquidScreen welcome_Screen(welcome_line0, welcome_line1, welcome_line2, welcome_line3);
+// LiquidLine welcome_line3(1,3,welcome_text3);
+LiquidScreen welcome_Screen(welcome_line0, welcome_line1, welcome_line2);// welcome_line3
 
 /////////////Main Screen////////////////////
 const char main_text0[] PROGMEM = "    MAIN MENU";
 const char main_text1[] PROGMEM = "1: SETTINGS";
 const char main_text2[] PROGMEM = "2: LAUNCH A TEST";
-const char main_text3[] PROGMEM = "3: DEBUG";
+//const char main_text3[] PROGMEM = "3: DEBUG";
 LiquidLine main_line0(1,0,main_text0);
 LiquidLine main_line1(1,1,main_text1);
 LiquidLine main_line2(1,2,main_text2);
-LiquidLine main_line3(1,3,main_text3);
-LiquidScreen main_Screen(main_line0,main_line1,main_line2,main_line3);
+//LiquidLine main_line3(1,3,main_text3);
+LiquidScreen main_Screen(main_line0,main_line1,main_line2);//main_line3
 
 
 /////////////Settings Screen////////////////////
@@ -206,8 +205,8 @@ LiquidScreen Settings_NTC_Screen(Settings_NTC_line0,Settings_NTC_line1,Settings_
 
 //R_25
 const char R_25_Selection_text0[] = "R@25=";
-const char R_25_Selection_text1[] = " - 10K +";
-const char R_25_Selection_text2[] = " - 1K  +";
+const char R_25_Selection_text1[] = " - 10K + ";
+const char R_25_Selection_text2[] = " - 1K  + ";
 const char R_25_Selection_text3[] = "Reset to default";
 const char R_25_Selection_text4[] = "BACK";
 LiquidLine R_25_Selection_line0(1,0,R_25_Selection_text0, R_25, " Ohm");
@@ -235,8 +234,8 @@ LiquidScreen B_value_selection_Screen(B_value_selection_line0,B_value_selection_
 
 //Rshunt
 const char RshuntSelection_text0[] = "Rshunt = ";
-const char RshuntSelection_text1[] = "- 1000 +";
-const char RshuntSelection_text2[] = "- 100  +";
+const char RshuntSelection_text1[] = " - 1000 + ";
+const char RshuntSelection_text2[] = " - 100  + ";
 const char RshuntSelection_text3[] = "Reset to default";
 const char RshuntSelection_text4[] = "BACK";
 LiquidLine RshuntSelection_line0(1,0,RshuntSelection_text0, R_SHUNT, " uOhm");
@@ -402,12 +401,12 @@ void putInProgmem(void)
 	welcome_line0.set_asProgmem(1);
 	welcome_line1.set_asProgmem(1);
 	welcome_line2.set_asProgmem(1);
-	welcome_line3.set_asProgmem(1);
+	//welcome_line3.set_asProgmem(1);
 	
 	main_line0.set_asProgmem(1);
 	main_line1.set_asProgmem(1);
 	main_line2.set_asProgmem(1);
-	main_line3.set_asProgmem(1);
+	//main_line3.set_asProgmem(1);
 	
 	Settings_line0.set_asProgmem(1);
 	Settings_line1.set_asProgmem(1);
@@ -500,11 +499,11 @@ void attachFunctionToLine(void)
 	welcome_line0.attach_function(1, gotoMainScreen);
 	welcome_line1.attach_function(1, gotoMainScreen);
 	welcome_line2.attach_function(1, gotoMainScreen);
-	welcome_line3.attach_function(1, gotoMainScreen);
+	//welcome_line3.attach_function(1, gotoMainScreen);
 	
 	main_line1.attach_function(1, gotoSettingsScreen); //Start the settings screen
-	main_line2.attach_function(1, gotoLaunchScreen); //Debug
-	main_line3.attach_function(1, debugSD); //Launch test
+	main_line2.attach_function(1, gotoLaunchScreen); //Launch test
+	//main_line3.attach_function(1, debugADC); //Debug
 
 	Settings_line0.attach_function(1, gotoMainScreen);
 	Settings_line1.attach_function(1, gotoSettingsNumberScreen);
@@ -532,7 +531,6 @@ void attachFunctionToLine(void)
 	Settings_NTC_line1.attach_function(1, gotoBValueSelectionScreen);
 	Settings_NTC_line2.attach_function(1, gotoSettingsScreen );
 	
-	//R_25_Selection_line0.attach_function(1, emptyfunction );
 	R_25_Selection_line1.attach_function(6, decrement10KR25 );
 	R_25_Selection_line1.attach_function(7, increment10KR25 );
 	R_25_Selection_line2.attach_function(6, decrement1KR25 );
@@ -540,7 +538,6 @@ void attachFunctionToLine(void)
 	R_25_Selection_line3.attach_function(1, resetR25ToDefault);
 	R_25_Selection_line4.attach_function(1, gotoNTCScreen );
 	
-	//B_value_selection_line0.attach_function(1, emptyfunction);
 	B_value_selection_line1.attach_function(6, decrement100BFactor);
 	B_value_selection_line1.attach_function(7, increment100BFactor);
 	B_value_selection_line2.attach_function(6, decrement10BFactor);
@@ -550,7 +547,6 @@ void attachFunctionToLine(void)
 	B_value_selection_line4.attach_function(1, resetBFactorToDefault);
 	B_value_selection_line5.attach_function(1, gotoNTCScreen);
 	
-	//RshuntSelection_line0.attach_function(1, emptyfunction );
 	RshuntSelection_line1.attach_function(6, decrement1000Rshunt );
 	RshuntSelection_line1.attach_function(7, increment1000Rshunt );
 	RshuntSelection_line2.attach_function(6, decrement100Rshunt );
@@ -559,7 +555,6 @@ void attachFunctionToLine(void)
 	RshuntSelection_line4.attach_function(1, gotoSettingsScreen);
 	
 	
-	TcTypeSelection_line0.attach_function(1, emptyfunction );
 	TcTypeSelection_line0.attach_function(6, decrementTcType );
 	TcTypeSelection_line0.attach_function(7, incrementTcType );
 	TcTypeSelection_line1.attach_function(1, gotoSettingsScreen );
@@ -570,11 +565,10 @@ void attachFunctionToLine(void)
 	SettingsInterval_line2.attach_function(7, incrementTempsMin);
 	SettingsInterval_line3.attach_function(1, gotoSettingsScreen);
 
-	SaveToEEPROM_line2.attach_function(1,saveToEEPROM );
-	SaveToEEPROM_line2.attach_function(2,gotoSavedToEEPROMScreen);
+	SaveToEEPROM_line2.attach_function(1, saveToEEPROM );
+	SaveToEEPROM_line2.attach_function(2, gotoSavedToEEPROMScreen);
 	SaveToEEPROM_line3.attach_function(1, gotoSettingsScreen);
 	
-	SavedToEEPROM_line0.attach_function(1, gotoSettingsScreen);
 	SavedToEEPROM_line1.attach_function(1, gotoSettingsScreen);
 	
 	Setup_RTC_line0.attach_function(6, decrementHour );
@@ -591,13 +585,12 @@ void attachFunctionToLine(void)
 	Setup_RTC_line5.attach_function(2, gotoSettingsScreen);
 	Setup_RTC_line6.attach_function(1, gotoSettingsScreen );
 		
-	//todo change first line
-	Launch_line1.attach_function(1, emptyfunction);
+	Launch_line0.attach_function(1, initSensors);
+	Launch_line0.attach_function(2, gotoDurationScreen);
 	Launch_line4.attach_function(1, initSensors);
 	Launch_line4.attach_function(2, gotoDurationScreen);
 	Launch_line5.attach_function(1, gotoMainScreen);
 	
-	//Duration_line0.attach_function(1, emptyfunction );
 	Duration_line1.attach_function(6, decrementDurationHour);
 	Duration_line1.attach_function(7, incrementDurationHour);
 	Duration_line2.attach_function(6, decrementDurationMinute);
@@ -684,45 +677,33 @@ static void debugINA(void)
 static void debugADC(void)
 {
 	uint8_t i;
-	ADMUX |= (1<<REFS0); //AVCC ref
+	lcd.clear();
+	for (i = 0; i<TC_nb; i++) //filter 50Hz
+	{
+		max_array[i].begin();
+		max_array[i].oneShotTemperature(); //dummy conversion for init
+		max_array[i].setAveraging(4); //Average 4 measures
+	}
 	while(1)
 	{
-		lcd.clear();
-		lcd.home();
-		for(i=0; i<4;i++)
+		for (i = 0; i<TC_nb; i++) //filter 50Hz
 		{
-			lcd.setCursor(0,i);
-			lcd.print(ADCread(i+4));
+			lcd.println(i);
+			max_array[i].oneShotTemperature(); //dummy conversion for init
 			_delay_ms(200);
+			lcd.println(max_array[i].readThermocoupleTemperature());
+			lcd.println(max_array[i].readCJTemperature());
+			_delay_ms(2500);
+			lcd.clear();
 		}
 	}
 }
 
 static void debugSD(void)
 {
-	DDRH |= 0xF;
-	DDRL = 0xff;
-	PORTL = 0; //enable buffer
-	PORTH &=~(1<<3);
-	PORTH |= (1<<2); //select SD
-	PORTH &= ~(1<<1);
-	PORTH &= ~(1<<0);
-	SD.begin(16);
-	File dataFile = SD.open("/");
-	if (dataFile)
-	{
-		SD.mkdir("23-05");
-		lcd.clear();
-		File myFile = SD.open("/23-05/test.txt", FILE_WRITE);
-		lcd.print("SD OPEN");
-		myFile.println("COUCOUC");
-		myFile.close();
-	}
-	else
-	{
-		lcd.clear();
-		lcd.print("SD FAILED");
-	}
+	DDRJ |= 0xFF;
+	while(1)
+	PORTJ =0xff;
 	while(1);
 }
 
@@ -1041,7 +1022,7 @@ static void decrementDurationSec(void)
 
 static void resetBFactorToDefault(void)
 {
-	B_FACTOR = 3977.0;
+	B_FACTOR = 4000.0;
 }
 
 static void decrement100BFactor(void)
@@ -1263,6 +1244,8 @@ void endMeasures(void)
 	getElapsedTime();
 	Global_Current_DateTime = Global_End_Datetime; //it's the end we don't need to update
 	stopTimer();
+	enableVref(false);
+	PORTJ = 0; //disable led
 	Global_Is_multifile = false;
 	gotoEndOfMeasuresScreen();
 }

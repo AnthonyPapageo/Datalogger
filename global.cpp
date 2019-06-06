@@ -12,7 +12,7 @@ LiquidCrystal lcd(RS, RW, ENABLE_LCD, D4, D5, D6, D7);//4bit
 LiquidMenu menu(lcd);
 
 /////////MAX///////////
-MAX31856 max_array[20] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20}; //Call the 20 constructor
+MAX31856 max_array[20] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}; //Call the 20 constructor
 
 ////////MEASURE///////////
 float TC_Measure_Array[MAX_TC_NB];
@@ -38,7 +38,7 @@ uint8_t EEMEM NV_TC_nb = 0;
 uint8_t EEMEM NV_I_nb = 0;
 uint8_t EEMEM NV_V24_nb = 0;
 uint8_t EEMEM NV_V5_nb = 1;
-float EEMEM NV_B_FACTOR = 3977.0;
+float EEMEM NV_B_FACTOR = 4000.0;
 float EEMEM NV_R_25 = 10000.0;
 uint8_t EEMEM NV_IntervalSeconds = 5;
 uint8_t EEMEM NV_IntervalMinutes = 0;
@@ -67,7 +67,7 @@ uint8_t ElapsedMinutes = 0;
 uint16_t ElapsedHours = 0;
 
 //////////////LCD//////////////
-/*const uint8_t RS = 7;
+const uint8_t RS = 7;
 const uint8_t RW = 8;
 const uint8_t ENABLE_LCD = 9;
 const uint8_t D4 = 30;
@@ -75,8 +75,8 @@ const uint8_t D5 = 31;
 const uint8_t D6 = 32;
 const uint8_t D7 = 33;
 const uint8_t LCD_COL = 20;
-const uint8_t LCD_ROWS = 4;*/
-const uint8_t RS = 7;
+const uint8_t LCD_ROWS = 4;
+/*const uint8_t RS = 7;
 const uint8_t RW = 8;
 const uint8_t ENABLE_LCD = 9;
 const uint8_t D0 = 12;
@@ -88,7 +88,7 @@ const uint8_t D5 = 35;
 const uint8_t D6 = 36;
 const uint8_t D7 = 37;
 const uint8_t LCD_COL = 20;
-const uint8_t LCD_ROWS = 4;
+const uint8_t LCD_ROWS = 4;*/
 
 
 //////////////SPI//////////////
@@ -122,7 +122,7 @@ const uint8_t CS_DISABLE = 31;
 const uint8_t CS_SD = 43; //Arduino pin of PL6
 
 //////////////NTC//////////////
-float B_FACTOR = 3977.0;
+float B_FACTOR = 4000.0;
 float R_25 = 10000.0;
 const float R_LINE_NTC = 10000.0;
 const float V_SUPPLY = 5.0;

@@ -40,7 +40,7 @@ static void correctEEPROM(void);
 
 
 
-/*void initMux(void)
+void initMux(void)
 {
 	DDRE |= (1 << 3) | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7); //MUX address data as output
 	DDRB |= (1 << 0) | (1 << 4) | (1 << 5) | (1 << 6);//SS , !CS_MUX, !EN_MUX, !WR_MUX as output
@@ -55,7 +55,7 @@ static void correctEEPROM(void);
 
 void setMux(const uint8_t value)
 {
-	PORTE &= 0x07; /clear PE3 to PE7
+	PORTE &= 0x07; //clear PE3 to PE7
 	if (value < 20)
 	{
 		PORTB &= ~(1 << 0); //SS = 0
@@ -66,45 +66,9 @@ void setMux(const uint8_t value)
 	}
 	else
 	{
+		_delay_us(10);
 		PORTB |=(1 << 0); //SS = 1
 	}
-}*/
-
-void setMux(const uint8_t value) //Only for proto, need change for final version
-
-{
-	DDRH |= (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3); //OE MUX and data as output
-	PORTH &= ~(1 << 0); //OE MUX value = 0
-	DDRL |= (1 << 0);//OE BUF as output
-	
-	switch (value)
-	{
-		case 0:
-		PORTH &= ~(1 << 3); ///000
-		PORTH &= ~(1 << 2);
-		PORTH &= ~(1 << 1);
-		PORTL &= ~(1 << 0); //Enable 3v3 MISO by setting !OE_BUF at 0
-		break;
-		case 1:
-		PORTH |= (1 << 3); ///001
-		PORTH &= ~(1 << 2);
-		PORTH &= ~(1 << 1);
-		PORTL |= (1 << 0);//disable 3v3 MISO
-		break;
-		case 2:
-		PORTH &= ~(1 << 3); ///010
-		PORTH |= (1 << 2);
-		PORTH &= ~(1 << 1);
-		PORTL &= ~(1 << 0); //Enable 3v3 MISO by setting !OE_BUF at 0
-		break;
-		default:
-		PORTH |= (1 << 3);
-		PORTH |= (1 << 2);
-		PORTH |= (1 << 1);
-		PORTH |= (1 << 0); //disable mux
-		break;
-	}
-	_delay_us(20);
 }
 
 void initRTC(void)
@@ -132,16 +96,7 @@ void enableVref(bool b)
 
 bool IsSdInserted(void) //TODO CHANGE FOR FINAL
 {
-	DDRE &=~(1<<2); //SD_Detect as input
-	if (PINE & (1<<2)) //The pin is up so there is no SD card
-	{
-		return false;
-	}
-	else			//The pin is set to ground, there is a SD card
-	{
-		return true;
-	}
-	/*DDRL &=~(1<<5); //SD_Detect as input
+	DDRL &=~(1<<5); //SD_Detect as input
 	if (PINL & (1<<5)) //The pin is up so there is no SD card
 	{
 		return false;
@@ -149,7 +104,7 @@ bool IsSdInserted(void) //TODO CHANGE FOR FINAL
 	else			//The pin is set to ground, there is a SD card
 	{
 		return true;
-	}*/
+	}
 }
 
 void saveToEEPROM(void)
@@ -179,7 +134,7 @@ void LoadFromEEPROM(void)
 	I_nb = eeprom_read_byte(&NV_I_nb);
 	V24_nb = eeprom_read_byte(&NV_V24_nb);
 	V5_nb = eeprom_read_byte(&NV_V5_nb);
-	R_25 = eeprom_read_float(&NV_R_25);
+	R_25 = 10000.0;
 	B_FACTOR = eeprom_read_float(&NV_B_FACTOR);
 	IntervalSeconds = eeprom_read_byte(&NV_IntervalSeconds);
 	IntervalMinutes = eeprom_read_byte(&NV_IntervalMinutes);
@@ -208,50 +163,54 @@ static void correctEEPROM(void)
 	}
 	if(isnan(B_FACTOR))
 	{
-		B_FACTOR = 3977.0;
+		B_FACTOR = 4000.0;
 	}
 	IntervalMinutes = 0;
 	IntervalSeconds = 1;
 	saveToEEPROM(); //Save the new value 
 }
 
-void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbutton& up,Pushbutton& right, Pushbutton& Ok)
+void buttonsCheck(void)//Pushbutton& back,Pushbutton& left ,Pushbutton& down,Pushbutton& up ,Pushbutton& right , Pushbutton& Ok)
 {
 	
 	current_screen = menu.get_currentScreen();
 	
-	if(up.getSingleDebouncedPress())
+	if(!(PINC & (1<<1)))
 	{
 		menu.switch_focus(false); //Go up
+		_delay_ms(300);
 	}
-	else if(down.getSingleDebouncedPress())
+	else if(!(PINC & (1<<0)))
 	{
 		menu.switch_focus(true); //Go down
+		_delay_ms(300);
 	}
-	else if(right.isPressed())
+	else if(!(PINC & (1<<2)))
 	{
 		menu.call_function(7); //Increment function saved on the seventh
 		_delay_ms(150);
 	}
-	else if(left.isPressed())
+	else if(!(PING & (1<<0)))
 	{
 		menu.call_function(6); //Decrement function saved on the sixth
 		_delay_ms(150);
 	}
-	else if(Ok.getSingleDebouncedPress())
+	else if(!(PINC & (1<<3)))//else if(Ok.isPressed())
 	{
 		uint8_t i = 1 ;
 		while((menu.call_function(i)) && (i<= 5) && (menu.get_currentScreen() == current_screen))
 		//Call the function and check what it returns
 		//if the call_function returns false, there is no more function
 		//so we get out. Verify that we don't go over 5 (reserved functions)
+		// if the screen changed, we need to stop calling the functions
 		{
 			i++;
 		}
+		_delay_ms(300);
 	}
-	else if (back.getSingleDebouncedPress())
+	else if (!(PING & (1<<1)))
 	{
-		if((current_screen == &Settings_Screen) || (current_screen == &Launch_Screen) ) // Were are just after main screen
+		if((current_screen == &Settings_Screen) || (current_screen == &Launch_Screen) ) // We are are just after main screen
 		{
 			gotoMainScreen();
 		}
@@ -263,6 +222,7 @@ void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbut
 		{
 			gotoSettingsScreen();
 		}
+		_delay_ms(300);
 	}
 	current_screen = menu.get_currentScreen();//update variable
 }
@@ -309,7 +269,7 @@ void resetToDefault(void)
 	ElapsedMinutes = 0;
 	ElapsedHours = 0;
 	
-	 B_FACTOR = 3977.0;
+	 B_FACTOR = 4000.0;
 	 R_25 = 10000.0;
 	 saveToEEPROM();
 }
@@ -319,19 +279,14 @@ void resetToDefault(void)
 void setFileName(void)
 {
 	DateTime dt = RTC.now();
-	DDRH |= 0xF;
-	DDRL = 0xff;
-	PORTL = 0; //enable buffer
-	PORTH &=~(1<<3);
-	PORTH |= (1<<2); //select SD
-	PORTH &= ~(1<<1);
-	PORTH &= ~(1<<0);
+	uint16_t temp;
+	temp = dt.year(); -2000; 
+	//path = String(temp) + "-" + String(dt.month()) + "-" + String(dt.day()) ;
 	path = String(dt.day()) + "-" + String(dt.month())  + "/"; //Folder is date + "-" + String(dt.year())
-	//path = "test";
-	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
+	SD.begin(CS_SD);
 	SD.open("/");
 	SD.mkdir(path);
-	FileName = path + "/" + String(dt.hour()) + "h" + String(dt.minute()) + ".csv"; //File is time of beginning
+	FileName = path + String(dt.hour()) + "h" + String(dt.minute()) + ".csv"; //File is time of beginning
 }
 
 void firstLineSD(void) //Write the header of the CSV file and get the beginning time
@@ -342,17 +297,8 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 	{
 		computeTime();
 	}
-	//todo retirer
-	DDRH |= 0xF;
-	DDRL = 0xff;
-	PORTL = 0; //enable buffer
-	PORTH &=~(1<<3);
-	PORTH |= (1<<2); //select SD
-	PORTH &= ~(1<<1);
-	PORTH &= ~(1<<0);
 	setFileName();
-	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
-	//SD.open(path);
+	SD.begin(CS_SD);
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	
 	led_SD(true);//Assert that we are writing to the SD card
@@ -397,7 +343,7 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 		dataFile.close();
 	}
 	
-	/*else //uncomment on final product
+	else 
 	{
 		lcd.clear();
 		lcd.home();
@@ -408,8 +354,7 @@ void firstLineSD(void) //Write the header of the CSV file and get the beginning 
 		lcd.print("RESET IN 5sec");
 		_delay_ms(5000);
 		soft_reset();
-	}*/
-	
+	}
 	led_SD(false);
 }
 
@@ -418,15 +363,7 @@ void saveToSD(void)
 	uint8_t i;
 	String temp;
 	float average = 0.0;
-	DDRH |= 0xF;
-	DDRL = 0xff;
-	PORTL = 0; //enable buffer
-	PORTH &=~(1<<3);
-	PORTH |= (1<<2); //select SD
-	PORTH &= ~(1<<1);
-	PORTH &= ~(1<<0);
-	SD.begin(16);//SD.begin(CS_SD);(CS_SD);
-	//SD.open(path);
+	SD.begin(CS_SD);
 	File dataFile = SD.open(FileName, FILE_WRITE);
 	SdWriteInt(dataFile,static_cast<int32_t>(Nb_Of_Measure)); // first column
 	for(i = 0; i<TC_nb;i++)
@@ -503,7 +440,7 @@ static void SdWriteTime(File& dataFile) //first the date then the time
 
 void led_SD(bool b)
 {
-	/*DDRL |= (1 << 7);
+	DDRL |= (1 << 7);
 	if(b)
 	{
 		PORTL |=(1 << 7);
@@ -511,8 +448,8 @@ void led_SD(bool b)
 	else
 	{
 		PORTL &= ~(1 << 7);
-	}*/
-	DDRG |= (1 << 5);
+	}
+	/*DDRG |= (1 << 5);
 	if(b)
 	{
 		PORTG |= (1 << 5);
@@ -520,7 +457,7 @@ void led_SD(bool b)
 	else
 	{
 		PORTG &= ~(1 << 5);
-	}
+	}*/
 	
 	
 }
