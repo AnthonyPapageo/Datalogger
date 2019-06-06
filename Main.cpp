@@ -19,11 +19,11 @@
 
 
 //////////////CUSTOM//////////////
-#include "C:/Users/Anthony/Documents/BA3 Electronique/Stages/Datalogger/Code/Library/Custom/utility.h"
-#include "C:/Users/Anthony/Documents/BA3 Electronique/Stages/Datalogger/Code/Library/Custom/MAX31856.h"
-#include "C:/Users/Anthony/Documents/BA3 Electronique/Stages/Datalogger/Code/Library/Custom/global.h"
-#include "C:/Users/Anthony/Documents/BA3 Electronique/Stages/Datalogger/Code/Library/Custom/menu.h"
-#include "C:/Users/Anthony/Documents/BA3 Electronique/Stages/Datalogger/Code/Library/Custom/measure.h"
+#include "utility.h"
+#include "MAX31856.h"
+#include "global.h"
+#include "menu.h"
+#include "measure.h"
 
 
 void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3")));
