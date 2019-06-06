@@ -227,6 +227,59 @@ void buttonsCheck(void)//Pushbutton& back,Pushbutton& left ,Pushbutton& down,Pus
 	current_screen = menu.get_currentScreen();//update variable
 }
 
+void buttonsCheck(Pushbutton& back, Pushbutton& left , Pushbutton& down, Pushbutton& up,Pushbutton& right, Pushbutton& Ok)
+{
+	
+	current_screen = menu.get_currentScreen();
+	
+	if(up.getSingleDebouncedPress())
+	{
+		menu.switch_focus(false); //Go up
+	}
+	else if(down.getSingleDebouncedPress())
+	{
+		menu.switch_focus(true); //Go down
+	}
+	else if(right.isPressed())
+	{
+		menu.call_function(7); //Increment function saved on the seventh
+		_delay_ms(150);
+	}
+	else if(left.isPressed())
+	{
+		menu.call_function(6); //Decrement function saved on the sixth
+		_delay_ms(150);
+	}
+	else if(Ok.getSingleDebouncedPress())
+	{
+		uint8_t i = 1 ;
+		while((menu.call_function(i)) && (i<= 5) && (menu.get_currentScreen() == current_screen))
+		//Call the function and check what it returns
+		//if the call_function returns false, there is no more function
+		//so we get out. Verify that we don't go over 5 (reserved functions)
+		{
+			i++;
+		}
+	}
+	else if (back.getSingleDebouncedPress())
+	{
+		if((current_screen == &Settings_Screen) || (current_screen == &Launch_Screen) ) // Were are just after main screen
+		{
+			gotoMainScreen();
+		}
+		else if((current_screen == &R_25_Selection_Screen) || (current_screen == &B_value_selection_Screen))
+		{
+			gotoNTCScreen();
+		}
+		else if(current_screen != &Measuring_Screen)
+		{
+			gotoSettingsScreen();
+		}
+	}
+	current_screen = menu.get_currentScreen();//update variable
+}
+
+
 void initInterruptTimer(void)
 {
 	// set up Timer 1
