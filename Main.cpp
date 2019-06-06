@@ -50,7 +50,7 @@ ISR(TIMER1_COMPA_vect)
 		counterInterrupt = 0;
 	}
 	counterInterrupt++;
-	PORTJ ^=(1<<5);
+	PORTJ ^=(1<<5); //blink LED
 }
 
 
@@ -84,8 +84,6 @@ void setup()
 	menu.update();
 	menu.switch_focus(true);
 	DDRJ |= 0x60; //LED 2 and LED 3 as output
-	DDRC &= 0xF0; //but as input
-	DDRG &= 0xFC; //but back et left as input
 	DDRL |= (1<<6);
 	PORTL |= (1<<6); //CS SD high
 	SPI.beginTransaction(SPISettings(400000,MSBFIRST,SPI_MODE0));
